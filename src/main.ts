@@ -42,6 +42,7 @@ type Tile = {
 };
 
 class GameScene extends Phaser.Scene {
+  private audioContext?: AudioContext;
   private grid: Tile[][] = [];
   private rulesState: GameState | undefined;
   private score = 0;
@@ -91,6 +92,10 @@ class GameScene extends Phaser.Scene {
     window.addEventListener("online", this.onlineHandler);
     this.events.once(Phaser.Scenes.Events.DESTROY, () => {
       window.removeEventListener("online", this.onlineHandler);
+      if (this.audioContext && this.audioContext.state !== "closed") {
+        void this.audioContext.close();
+      }
+      this.audioContext = undefined;
     });
 
     const loaded = loadProfile();
@@ -288,7 +293,7 @@ class GameScene extends Phaser.Scene {
     });
 
     dailyButton.on("pointerover", () => {
-      dailyButton.setFillStyle(0x10b981);
+      dailyButton.setFillStyle(0xbbf7d0);
     });
 
     dailyButton.on("pointerout", () => {
@@ -990,13 +995,13 @@ class GameScene extends Phaser.Scene {
       const current = achievementProgress(this.profile, achievement.id);
       const ratio = achievement.goal === 0 ? 1 : current / achievement.goal;
 
-      this.add.rectangle(280, y, 492, cardH, unlocked ? 0x132033 : 0xeaf0ff)
-        .setStrokeStyle(2, unlocked ? 0x0ea5e9 : 0xe2e8f0);
+      this.add.rectangle(280, y, 492, cardH, unlocked ? 0xdcfce7 : 0xeaf0ff)
+        .setStrokeStyle(2, unlocked ? 0x6ee7b7 : 0xe2e8f0);
 
       this.add.text(50, y - 26, achievement.name.toUpperCase(), {
         fontFamily: font,
         fontSize: "16px",
-        color: unlocked ? "#1e293b" : "#475569",
+        color: unlocked ? "#166534" : "#475569",
         fontStyle: "bold"
       }).setOrigin(0, 0.5);
 
@@ -1151,9 +1156,15 @@ class GameScene extends Phaser.Scene {
 
     try {
       const AudioContextClass =
-        window.AudioContext || (window as any).webkitAudioContext;
+        window.AudioContext ||
+        (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
 
-      const audioContext = new AudioContextClass();
+      this.audioContext ??= new AudioContextClass();
+      const audioContext = this.audioContext;
+      if (audioContext.state === "suspended") {
+        void audioContext.resume().catch(() => undefined);
+      }
 
       const oscillator = audioContext.createOscillator();
       const gain = audioContext.createGain();
@@ -1176,7 +1187,10 @@ class GameScene extends Phaser.Scene {
       oscillator.start();
       oscillator.stop(audioContext.currentTime + duration);
 
-      oscillator.onended = () => audioContext.close();
+      oscillator.onended = () => {
+        oscillator.disconnect();
+        gain.disconnect();
+      };
     } catch (error) {
       console.warn("Sound could not be played:", error);
     }
