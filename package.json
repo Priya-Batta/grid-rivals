@@ -6,13 +6,16 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
+    "test": "node --experimental-strip-types src/achievements.test.ts && node --experimental-strip-types src/leaderboard.test.ts && node --experimental-strip-types shared/grid-rivals-rules.test.ts && node --experimental-strip-types supabase/functions/_shared/submit-game-verifier.test.ts",
     "preview": "vite preview"
   },
   "devDependencies": {
+    "supabase": "^3.0.0",
     "typescript": "~7.0.2",
     "vite": "^8.3.5"
   },
   "dependencies": {
+    "@supabase/supabase-js": "^2.119.0",
     "phaser": "^4.2.1"
   }
 }

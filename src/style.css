@@ -1,35 +1,472 @@
-
 * {
   box-sizing: border-box;
 }
 
-html, body {
+html,
+body {
   margin: 0;
   padding: 0;
   width: 100%;
-  min-height: 100%;
+  height: 100%;
   background: #0b1220;
-  font-family: Arial, sans-serif;
+  color: #ffffff;
+  font-family: "Courier New", Courier, monospace;
+  overflow: hidden;
+  overscroll-behavior: none;
 }
 
 body {
-  min-height: 100vh;
-  display: flex;
-  justify-content: center;
-  align-items: center;
-  overflow-x: hidden;
+  position: fixed;
+  inset: 0;
+  padding:
+    max(8px, env(safe-area-inset-top, 0px))
+    max(8px, env(safe-area-inset-right, 0px))
+    max(8px, env(safe-area-inset-bottom, 0px))
+    max(8px, env(safe-area-inset-left, 0px));
 }
 
+/* Phaser FIT sets the canvas size. Flexbox does the only centering pass.
+   Phaser margins stay at 0 so the board is not pushed to the right. */
 #app {
   width: 100%;
+  height: 100%;
   display: flex;
-  justify-content: center;
   align-items: center;
+  justify-content: center;
+  overflow: hidden;
+  background:
+    radial-gradient(ellipse at center, #122033 0%, #0b1220 68%);
 }
 
 canvas {
   display: block;
-  max-width: 100%;
-  max-height: 100vh;
-  object-fit: contain;
+  flex: 0 0 auto;
+  margin: 0 !important;
+  touch-action: none;
+}
+
+.leaderboard-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 20;
+  overflow: auto;
+  padding: clamp(12px, 3vw, 28px);
+  color: #e2e8f0;
+  background:
+    linear-gradient(rgba(34, 211, 238, 0.035) 1px, transparent 1px),
+    linear-gradient(90deg, rgba(34, 211, 238, 0.035) 1px, transparent 1px),
+    radial-gradient(ellipse at 50% 0%, #17324a 0%, #0b1220 62%);
+  background-size: 32px 32px, 32px 32px, auto;
+  font-family: "Courier New", Courier, monospace;
+}
+
+.leaderboard-shell {
+  width: min(100%, 840px);
+  min-height: calc(100dvh - clamp(24px, 6vw, 56px));
+  margin: 0 auto;
+  padding: clamp(16px, 3vw, 28px);
+  border: 1px solid #28516a;
+  background: rgba(8, 18, 31, 0.94);
+  box-shadow: 0 0 0 4px rgba(8, 18, 31, 0.55), 0 18px 70px #020617;
+}
+
+.leaderboard-header,
+.leaderboard-toolbar,
+.leaderboard-section-heading,
+.leaderboard-name-form {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.leaderboard-header {
+  padding-bottom: 16px;
+  border-bottom: 1px solid #28465a;
+}
+
+.leaderboard-header h1,
+.leaderboard-header p,
+.leaderboard-section-heading h2,
+.leaderboard-section-heading p,
+.leaderboard-status {
+  margin: 0;
+}
+
+.leaderboard-header h1 {
+  color: #f8fafc;
+  font-size: clamp(20px, 4vw, 29px);
+  font-weight: 700;
+}
+
+.leaderboard-header p {
+  margin-top: 5px;
+  color: #22d3ee;
+  font-size: 11px;
+}
+
+.leaderboard-icon-button,
+.leaderboard-button {
+  min-height: 42px;
+  border: 1px solid #22d3ee;
+  border-radius: 3px;
+  color: #ecfeff;
+  background: #0e7490;
+  font: inherit;
+  font-size: 12px;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.leaderboard-icon-button {
+  width: 42px;
+  font-size: 26px;
+}
+
+.leaderboard-button {
+  padding: 0 14px;
+}
+
+.leaderboard-button:hover,
+.leaderboard-icon-button:hover {
+  background: #0891b2;
+}
+
+.leaderboard-button:disabled {
+  cursor: wait;
+  opacity: 0.65;
+}
+
+.leaderboard-button--quiet {
+  border-color: #476276;
+  background: #1e293b;
+}
+
+.leaderboard-button--quiet:hover {
+  background: #334155;
+}
+
+.leaderboard-profile {
+  padding: 18px 0;
+  border-bottom: 1px solid #28465a;
+}
+
+.leaderboard-section-heading h2 {
+  color: #fbbf24;
+  font-size: 14px;
+}
+
+.leaderboard-name-form {
+  justify-content: flex-start;
+  flex-wrap: wrap;
+  margin-top: 14px;
+}
+
+.leaderboard-name-form label,
+.leaderboard-filter > span {
+  color: #94a3b8;
+  font-size: 10px;
+  font-weight: 700;
+}
+
+.leaderboard-name-form input,
+.leaderboard-filter select {
+  min-height: 42px;
+  border: 1px solid #3b586e;
+  border-radius: 3px;
+  padding: 0 10px;
+  color: #f8fafc;
+  background: #0f1b2a;
+  font: inherit;
+  font-size: 13px;
+}
+
+.leaderboard-name-form input {
+  width: min(100%, 270px);
+}
+
+.leaderboard-name-form input:focus,
+.leaderboard-filter select:focus,
+.leaderboard-button:focus-visible,
+.leaderboard-icon-button:focus-visible {
+  outline: 2px solid #fbbf24;
+  outline-offset: 2px;
+}
+
+.leaderboard-status {
+  min-height: 16px;
+  margin-top: 8px;
+  color: #94a3b8;
+  font-size: 10px;
+  line-height: 1.5;
+}
+
+.leaderboard-profile-stats {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(0, 1fr));
+  gap: 10px;
+  margin-top: 14px;
+}
+
+.leaderboard-stat {
+  display: flex;
+  min-height: 58px;
+  flex-direction: column;
+  justify-content: center;
+  gap: 5px;
+  padding: 8px 10px;
+  border-left: 2px solid #22d3ee;
+  background: #101e2d;
+}
+
+.leaderboard-stat span {
+  color: #94a3b8;
+  font-size: 9px;
+}
+
+.leaderboard-stat strong {
+  overflow: hidden;
+  color: #f8fafc;
+  font-size: 16px;
+  text-overflow: ellipsis;
+}
+
+.leaderboard-toolbar {
+  align-items: flex-end;
+  padding: 18px 0 14px;
+}
+
+.leaderboard-filters {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 10px;
+}
+
+.leaderboard-filter {
+  display: grid;
+  gap: 5px;
+}
+
+.leaderboard-filter select {
+  min-width: 142px;
+}
+
+.leaderboard-entries {
+  border-top: 1px solid #28465a;
+}
+
+.leaderboard-entries > .leaderboard-section-heading {
+  padding: 14px 0 10px;
+}
+
+.leaderboard-column-labels {
+  color: #64748b;
+  font-size: 9px;
+}
+
+.leaderboard-list {
+  display: grid;
+  gap: 5px;
+}
+
+.leaderboard-row {
+  display: grid;
+  min-height: 58px;
+  grid-template-columns: 52px minmax(0, 1fr) max-content;
+  align-items: center;
+  gap: 12px;
+  padding: 8px 12px;
+  border: 1px solid #203448;
+  background: #0d1927;
+}
+
+.leaderboard-row--top-1 {
+  border-color: #b8892e;
+  background: linear-gradient(90deg, #332b17, #101b28 55%);
+}
+
+.leaderboard-row--top-2 {
+  border-color: #627587;
+}
+
+.leaderboard-row--top-3 {
+  border-color: #9c6039;
+}
+
+.leaderboard-row--current {
+  box-shadow: inset 3px 0 #22d3ee;
+}
+
+.leaderboard-rank {
+  color: #fbbf24;
+  font-size: 16px;
+  text-align: center;
+}
+
+.leaderboard-player {
+  display: grid;
+  min-width: 0;
+  gap: 5px;
+}
+
+.leaderboard-player strong {
+  overflow: hidden;
+  color: #f8fafc;
+  font-size: 13px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-player span {
+  overflow: hidden;
+  color: #94a3b8;
+  font-size: 9px;
+  text-overflow: ellipsis;
+  white-space: nowrap;
+}
+
+.leaderboard-score {
+  color: #4ade80;
+  font-size: 17px;
+  text-align: right;
+}
+
+.leaderboard-state {
+  display: grid;
+  min-height: 130px;
+  place-content: center;
+  justify-items: center;
+  gap: 12px;
+  color: #94a3b8;
+  font-size: 12px;
+  line-height: 1.6;
+  text-align: center;
+}
+
+.leaderboard-footer {
+  padding: 14px 0 4px;
+  border-top: 1px solid #28465a;
+}
+
+@media (max-width: 560px) {
+  .leaderboard-overlay {
+    padding: 0;
+  }
+
+  .leaderboard-shell {
+    min-height: 100dvh;
+    padding: 16px 12px;
+    border: 0;
+  }
+
+  .leaderboard-name-form {
+    display: grid;
+    grid-template-columns: minmax(0, 1fr) max-content;
+  }
+
+  .leaderboard-name-form label {
+    grid-column: 1 / -1;
+  }
+
+  .leaderboard-name-form input {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .leaderboard-profile-stats {
+    gap: 6px;
+  }
+
+  .leaderboard-stat {
+    padding: 7px;
+  }
+
+  .leaderboard-stat span {
+    font-size: 8px;
+  }
+
+  .leaderboard-stat strong {
+    font-size: 14px;
+  }
+
+  .leaderboard-toolbar {
+    align-items: stretch;
+    flex-direction: column;
+  }
+
+  .leaderboard-filters {
+    display: grid;
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .leaderboard-filter select {
+    min-width: 0;
+    width: 100%;
+    font-size: 11px;
+  }
+
+  .leaderboard-toolbar > button {
+    align-self: flex-end;
+  }
+
+  .leaderboard-column-labels {
+    display: none;
+  }
+
+  .leaderboard-row {
+    grid-template-columns: 40px minmax(0, 1fr) max-content;
+    gap: 8px;
+    padding: 8px;
+  }
+
+  .leaderboard-player span {
+    font-size: 8px;
+  }
+}
+
+/* Phones: keep a slim inset so cells stay inside the screen. */
+@media (max-width: 480px) {
+  body {
+    padding:
+      max(4px, env(safe-area-inset-top, 0px))
+      max(4px, env(safe-area-inset-right, 0px))
+      max(4px, env(safe-area-inset-bottom, 0px))
+      max(4px, env(safe-area-inset-left, 0px));
+  }
+}
+
+/* Tablets */
+@media (min-width: 481px) and (max-width: 768px) {
+  body {
+    padding:
+      max(16px, env(safe-area-inset-top, 0px))
+      max(16px, env(safe-area-inset-right, 0px))
+      max(16px, env(safe-area-inset-bottom, 0px))
+      max(16px, env(safe-area-inset-left, 0px));
+  }
+}
+
+/* Laptops */
+@media (min-width: 769px) and (max-width: 1200px) {
+  body {
+    padding:
+      max(20px, env(safe-area-inset-top, 0px))
+      max(20px, env(safe-area-inset-right, 0px))
+      max(20px, env(safe-area-inset-bottom, 0px))
+      max(20px, env(safe-area-inset-left, 0px));
+  }
+}
+
+/* Large desktops */
+@media (min-width: 1201px) {
+  body {
+    padding: 28px;
+  }
+}
+
+/* Short landscape screens: drop extra insets so the board still fits. */
+@media (max-height: 520px) {
+  body {
+    padding: 2px;
+  }
 }
