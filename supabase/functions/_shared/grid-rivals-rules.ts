@@ -1,4 +1,4 @@
-export const RULES_VERSION = 1 as const;
+export const RULES_VERSION = 2 as const;
 export const RNG_VERSION = 1 as const;
 export const GRID_SIZE = 8;
 export const WIN_SCORE = 200;
