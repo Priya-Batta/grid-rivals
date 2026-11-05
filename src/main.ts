@@ -1269,7 +1269,6 @@ new Phaser.Game({
   height: 920,
   parent: "app",
   backgroundColor: "#f5f7ff",
-  resolution: Math.min(window.devicePixelRatio || 1, 4),
   render: { antialias: true, roundPixels: true },
   scene: [GameScene],
   scale: {
