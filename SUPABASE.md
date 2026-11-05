@@ -1,43 +1,89 @@
-# Supabase Leaderboard Setup
+# Supabase Setup — Current Server-Verified Architecture
 
-The game needs a Supabase project to publish global results. No project URL or key is included in this repository. Until configured, gameplay and existing local best scores continue to work; finished scores are kept in a local retry queue.
+This document describes the current server-verified implementation on the `improve/ui-performance-pass` branch. It supersedes the older client-submitted score instructions.
 
-## Supabase project
+## Required project configuration
 
-1. Create a Supabase project on the Free plan.
-2. In **Authentication > Sign In / Providers**, enable **Anonymous Sign-Ins**. Anonymous users receive a persisted auth session in this browser without registering an account.
-3. Open **SQL Editor**, paste and run the complete [`supabase/schema.sql`](supabase/schema.sql) script. It creates the profile and score tables, indexes, RLS policies, and RPC functions.
-4. In **Project Settings > API**, copy the Project URL and the public anon/publishable key. Never use a `service_role` or secret key in this frontend.
-5. Add the local and production app URLs under the Supabase Auth URL configuration where applicable, including `http://localhost:5173` and `https://grid-rivals.pages.dev`.
-
-## Environment variables
-
-For local development, copy `.env.example` to `.env` and set:
+1. Create or use the existing Supabase project.
+2. Enable **Authentication → Sign In / Providers → Anonymous Sign-Ins**.
+3. Configure the local and deployed application URLs in Supabase Auth settings where required.
+4. For local development, copy `.env.example` to `.env` and configure the public frontend values:
 
 ```dotenv
 VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
 VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_OR_PUBLISHABLE_KEY
 ```
 
-Both values are public browser configuration; database security comes from anonymous auth, RLS, and the narrowly scoped RPC functions. Do not put a service-role key in any `VITE_` variable. Restart Vite after changing `.env`.
+These values are public browser configuration. Never put a Supabase service-role key in a `VITE_` variable or frontend source.
 
-## Cloudflare Pages deployment
+## Database setup
 
-1. Open the existing `grid-rivals` Pages project in Cloudflare.
-2. Under **Settings > Builds & deployments**, use the repository root as the root directory, `npm run build` as the build command, and `dist` as the output directory. The install step is `npm ci`.
-3. Under **Settings > Environment variables**, add `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` to both Production and Preview environments. These are build-time variables because Vite embeds public configuration in the generated app.
-4. Save the settings and trigger a new deployment. The existing production URL remains `https://grid-rivals.pages.dev`.
-5. Open the deployed app, enter the Global Leaderboard, and confirm an anonymous profile is created. Finish a game to test score submission.
+The repository has a base schema and an additive server-verification migration:
 
-For a manual deployment, run `npm ci`, set the two variables in that shell environment, run `npm run build`, then deploy the resulting `dist` directory using the Cloudflare Pages dashboard or Wrangler.
+1. Review and apply `supabase/schema.sql` to a fresh project.
+2. Apply `supabase/migrations/002_server_verified_games.sql` after the base schema.
+3. For an existing project, inspect the migration history first. Do not blindly rerun SQL or apply the migration a second time.
+4. Preserve existing profiles and scores. The migration marks pre-existing scores as unverified; they remain stored but are excluded from the verified leaderboard.
+5. The migration initializes server-owned progress at level 1 / 0 XP rather than trusting legacy client-controlled XP.
 
-## Data and trust model
+Use the Supabase CLI migration workflow for future migrations. Keep the checked-in schema and migration history aligned; do not edit an already-applied migration to change a live database.
 
-- A score is submitted only from the completed-game flow. Leaving a game early does not submit it.
-- The client creates a stable UUID per game. The database unique constraint on `(user_id, game_id)` makes retries idempotent.
-- Submission derives `user_id` from the authenticated Supabase session. Direct table writes are not granted; writes go through the security-definer RPC, which validates score bounds, game mode, level, and submission rate.
-- Leaderboard RPCs return at most 100 players, one best score per player for the selected period and difficulty. `Today` uses UTC midnight; `This Week` is the rolling last seven days.
-- The score and level originate in a browser game. These checks reduce accidental and trivial abuse but do not make client-submitted scores cheat-proof. A trusted server-side game or replay-verification system would be needed for that.
-- Display names are limited to 3-20 basic Latin letters, digits, spaces, `_` and `-`, with a small profanity blocklist. Scores and display names are visible to other authenticated leaderboard participants.
-- Anonymous identity is tied to the browser's persisted Supabase session. Clearing browser storage can lose access to that anonymous profile.
-- Failed/offline submissions remain in local storage and are retried when connectivity returns or when the player presses **Retry Saved Scores**. Existing local personal bests remain unchanged.
+## Edge Functions
+
+Deploy both functions from the repository:
+
+- `start-game`: validates the caller's access token, derives the user ID from Auth, creates a server-owned run and returns its seed/configuration.
+- `submit-game`: validates the caller, checks the run and submitted move transcript using the shared verifier, and invokes the atomic finalizer.
+
+Deploy with the Supabase CLI from the repository root after linking the intended project:
+
+```bash
+supabase functions deploy start-game
+supabase functions deploy submit-game
+```
+
+The functions require the project's Supabase URL and service-role secret in the server-side Edge Function environment. The service-role secret must never be exposed to the browser, committed to Git, or copied into a `VITE_` variable. Use the Supabase project's managed secrets and verify the exact function configuration before deployment.
+
+## Cloudflare Pages
+
+For the existing Pages project:
+
+- Root directory: repository root
+- Build command: `npm run build`
+- Build output directory: `dist`
+- Install command: `npm ci`
+
+Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in both Preview and Production build environments. These are public build-time values. A new build is required after changing them.
+
+The `public/_redirects` SPA fallback supports direct navigation and refresh on application routes.
+
+## Current trust and data model
+
+- Auth identity is taken from the verified Supabase access token, not a client-supplied user ID.
+- Game runs are created server-side with a seed, rules version, RNG version and expiry.
+- The server replays the submitted move transcript against the versioned rules.
+- The database finalizer consumes a run once, inserts a verified score and updates XP/progression/achievement awards atomically.
+- Duplicate finalization is handled idempotently.
+- Leaderboards include verified scores only.
+- Existing pre-migration scores are preserved with `is_verified = false`.
+- Profiles, player progress and achievement awards are protected by RLS; sensitive writes use trusted server-side operations.
+
+Replay verification establishes that a transcript is legal under the current rules. It does not prove a human played or provide complete bot prevention.
+
+## Account recovery limitation
+
+Anonymous Supabase identity is persisted in the browser. Clearing browser storage can make an unlinked anonymous account inaccessible. Optional account linking is a planned improvement and must preserve the existing Auth user ID and associated data.
+
+## Verification before production deployment
+
+1. Confirm the intended Supabase project reference.
+2. Confirm migration history and deployed Edge Function versions.
+3. Confirm required function secrets exist without printing their values.
+4. Run `npm test` and `npm run build`.
+5. Test a new run, a valid submission, duplicate submission, invalid transcript and leaderboard visibility in a non-production environment.
+6. Deploy to Preview/staging first.
+7. Production deployment requires explicit approval.
+
+## Cost and operational notes
+
+Supabase and Cloudflare free tiers can support early validation, but free tiers are subject to quotas, inactivity and backup/availability limitations. Monitor usage and plan an upgrade when production uptime, recovery or traffic requirements justify it.
