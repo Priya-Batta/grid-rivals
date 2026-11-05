@@ -83,6 +83,7 @@ class GameScene extends Phaser.Scene {
   private readonly gridSpan = 8 * 63 + 7 * 4;
   private readonly startX = (560 - (8 * 63 + 7 * 4)) / 2;
   private readonly startY = 312;
+  private readonly popStateHandler = () => this.renderPath(window.location.pathname);
 
   constructor() {
     super("GameScene");
@@ -90,8 +91,10 @@ class GameScene extends Phaser.Scene {
 
   create() {
     window.addEventListener("online", this.onlineHandler);
+    window.addEventListener("popstate", this.popStateHandler);
     this.events.once(Phaser.Scenes.Events.DESTROY, () => {
       window.removeEventListener("online", this.onlineHandler);
+      window.removeEventListener("popstate", this.popStateHandler);
       if (this.audioContext && this.audioContext.state !== "closed") {
         void this.audioContext.close();
       }
@@ -100,8 +103,50 @@ class GameScene extends Phaser.Scene {
 
     const loaded = loadProfile();
     this.profile = loaded.profile;
-    this.showMenu();
+    this.renderPath(window.location.pathname);
     this.presentUnlocks(loaded.freshUnlocks);
+  }
+
+  private syncPath(path: string, replace = false) {
+    if (window.location.pathname === path) return;
+    if (replace) {
+      window.history.replaceState({}, "", path);
+    } else {
+      window.history.pushState({}, "", path);
+    }
+  }
+
+  private renderPath(pathname: string) {
+    const path = pathname.replace(/\\/+$/, "") || "/";
+    switch (path) {
+      case "/":
+        this.showMenu();
+        return;
+      case "/play/easy":
+      case "/play/medium":
+      case "/play/hard": {
+        const difficulty = path.slice("/play/".length);
+        this.isDailyChallenge = false;
+        this.difficulty = (difficulty[0].toUpperCase() + difficulty.slice(1)) as Difficulty;
+        void this.startGame();
+        return;
+      }
+      case "/daily":
+        this.startDailyChallenge();
+        return;
+      case "/statistics":
+        this.showStatistics();
+        return;
+      case "/achievements":
+        this.showAchievements();
+        return;
+      case "/leaderboard":
+        this.showLeaderboard();
+        return;
+      default:
+        this.syncPath("/", true);
+        this.showMenu();
+    }
   }
 
   private clearScreen() {
@@ -161,6 +206,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private showStatistics() {
+    this.syncPath("/statistics");
     this.clearScreen();
 
     this.add.text(280, 100, "PLAYER STATISTICS", {
@@ -206,6 +252,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private showMenu() {
+    this.syncPath("/");
     this.isDailyChallenge = false;
     this.clearScreen();
 
@@ -411,8 +458,9 @@ class GameScene extends Phaser.Scene {
   }
 
   private async startGame() {
-    this.clearScreen();
     const mode: StartGameMode = this.isDailyChallenge ? "daily" : "standard";
+    this.syncPath(this.isDailyChallenge ? "/daily" : `/play/${this.difficulty.toLowerCase()}`);
+    this.clearScreen();
     const difficulty = this.difficulty;
     this.add.rectangle(280, 460, 520, 880, 0xf5f7ff).setStrokeStyle(2, 0xdbe3f3);
     this.add.text(280, 440, "STARTING VERIFIED RUN...", {
@@ -939,6 +987,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private showLeaderboard() {
+    this.syncPath("/leaderboard");
     this.clearScreen();
     const container = document.getElementById("app");
     if (!container) {
@@ -958,6 +1007,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private showAchievements() {
+    this.syncPath("/achievements");
     this.clearScreen();
 
     const font = "Arial, Helvetica, sans-serif";
