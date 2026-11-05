@@ -202,9 +202,8 @@ export function maxMovesForDifficulty(difficulty: Difficulty): number {
 }
 
 export function determineGameCompletion(score: number, movesRemaining: number): GameStatus {
-  if (score >= WIN_SCORE) return "won";
-  if (movesRemaining <= 0) return "lost";
-  return "playing";
+  if (movesRemaining > 0) return "playing";
+  return score >= WIN_SCORE ? "won" : "lost";
 }
 
 export function applyMove(state: GameState, position: Position): AppliedMove {
