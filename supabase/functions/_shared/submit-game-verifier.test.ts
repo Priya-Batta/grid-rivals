@@ -184,7 +184,7 @@ function testServerDerivedScoreAndImpossibleTranscript() {
   const config = createStandardGameConfig("Hard", 1);
   const run = makeRun(config);
   const result = verifyGameTranscript(run, userId, hardWinMoves, now);
-  assert(result.score === 210 && result.score <= 240, "score is canonical replay output under SQL ceiling");
+  assert(result.score === 210 && result.score <= 400, "score is canonical replay output under SQL ceiling");
   expectCode(
     () => verifyGameTranscript(run, userId, [...hardWinMoves, { x: 1, y: 1 }], now),
     "illegal-move",
