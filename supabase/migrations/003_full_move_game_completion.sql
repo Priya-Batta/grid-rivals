@@ -2,7 +2,7 @@ begin;
 
 -- Serialize run creation while checking for active v1 games and switching the
 -- database functions to rules version 2.
-lock table public.grid_rivals_game_runs in share row exclusive mode;
+lock table public.grid_rivals_game_runs in access exclusive mode;
 
 do $migration$
 begin
