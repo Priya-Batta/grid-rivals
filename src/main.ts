@@ -1,6 +1,7 @@
 
 import Phaser from "phaser";
 import { resolveAppRoute } from "./app/routes.ts";
+import { createBoardView, refreshBoardView, type BoardTile } from "./game/board-view.ts";
 import "./style.css";
 import {
   applyMove,
@@ -32,18 +33,11 @@ import {
   type Profile
 } from "./achievements";
 
-type Tile = {
-  x: number;
-  y: number;
-  value: number;
-  claimed: boolean;
-  rect: Phaser.GameObjects.Rectangle;
-  label: Phaser.GameObjects.Text;
-};
+
 
 class GameScene extends Phaser.Scene {
   private audioContext?: AudioContext;
-  private grid: Tile[][] = [];
+  private grid: BoardTile[][] = [];
   private rulesState: GameState | undefined;
   private score = 0;
   private moves = 12;
@@ -555,57 +549,23 @@ class GameScene extends Phaser.Scene {
     const state = this.rulesState;
     if (!state) return;
 
-    for (let y = 0; y < state.board.length; y++) {
-      this.grid[y] = [];
-
-      for (let x = 0; x < state.board[y].length; x++) {
-        const px = this.startX + x * (this.cell + this.gap);
-        const py = this.startY + y * (this.cell + this.gap);
-
-        const isStart = state.claimed[y][x];
-        const value = state.board[y][x];
-
-        const rect = this.add.rectangle(
-          px + this.cell / 2,
-          py + this.cell / 2,
-          this.cell,
-          this.cell,
-          0xeaf0ff
-        );
-
-        const label = this.add.text(
-          px + this.cell / 2,
-          py + this.cell / 2,
-          isStart ? "★" : String(value),
-          {
-            fontFamily: "Arial, Helvetica, sans-serif",
-            fontSize: isStart ? "30px" : "28px",
-            color: "#1e293b",
-            fontStyle: "bold",
-          }
-        ).setOrigin(0.5)
-          .setResolution(4);
-
-        const tile: Tile = {
-          x, y, value,
-          claimed: isStart,
-          rect, label
-        };
-
-        rect.setInteractive({ useHandCursor: true });
-
-        rect.on("pointerdown", () => this.claimTile(tile));
-
-        this.grid[y][x] = tile;
-      }
-    }
+    this.grid = createBoardView(
+      this,
+      state,
+      {
+        startX: this.startX,
+        startY: this.startY,
+        cell: this.cell,
+        gap: this.gap
+      },
+      (tile) => this.claimTile(tile)
+    );
   }
-
-  private isAvailable(tile: Tile): boolean {
+  private isAvailable(tile: BoardTile): boolean {
     return Boolean(this.rulesState && isValidMove(this.rulesState, { x: tile.x, y: tile.y }));
   }
 
-  private claimTile(tile: Tile) {
+  private claimTile(tile: BoardTile) {
     if (this.gameOver || !this.rulesState) return;
     const result = applyMove(this.rulesState, { x: tile.x, y: tile.y });
     if (!result.accepted) return;
@@ -676,32 +636,8 @@ class GameScene extends Phaser.Scene {
   }
 
   private refreshBoard() {
-    for (const row of this.grid) {
-      for (const tile of row) {
-        const available = !tile.claimed && this.isAvailable(tile);
-
-        if (tile.claimed) {
-          // Captured territory: blue
-          tile.rect.setFillStyle(0x4f46e5);
-          tile.rect.setStrokeStyle(2, 0x818cf8);
-          tile.label.setColor("#1e293b");
-
-        } else if (available) {
-          // Available territory: teal
-          tile.rect.setFillStyle(0xd1fae5);
-          tile.rect.setStrokeStyle(2, 0x0ea5e9);
-          tile.label.setColor("#047857");
-
-        } else {
-          // Locked territory: dark grey
-          tile.rect.setFillStyle(0xeaf0ff);
-          tile.rect.setStrokeStyle(1, 0xcbd5e1);
-          tile.label.setColor("#64748b");
-        }
-      }
-    }
+    refreshBoardView(this.grid, (tile) => this.isAvailable(tile));
   }
-
   private finishGame() {
     this.gameOver = true;
     const won = this.rulesState?.status === "won";
