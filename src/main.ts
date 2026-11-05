@@ -83,6 +83,7 @@ class GameScene extends Phaser.Scene {
   private readonly gridSpan = 8 * 63 + 7 * 4;
   private readonly startX = (560 - (8 * 63 + 7 * 4)) / 2;
   private readonly startY = 312;
+  private navigationVersion = 0;
   private readonly popStateHandler = () => this.renderPath(window.location.pathname);
 
   constructor() {
@@ -206,6 +207,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private showStatistics() {
+    this.navigationVersion += 1;
     this.syncPath("/statistics");
     this.clearScreen();
 
@@ -252,6 +254,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private showMenu() {
+    this.navigationVersion += 1;
     this.syncPath("/");
     this.isDailyChallenge = false;
     this.clearScreen();
@@ -458,6 +461,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private async startGame() {
+    const navigationVersion = ++this.navigationVersion;
     const mode: StartGameMode = this.isDailyChallenge ? "daily" : "standard";
     this.syncPath(this.isDailyChallenge ? "/daily" : `/play/${this.difficulty.toLowerCase()}`);
     this.clearScreen();
@@ -483,6 +487,8 @@ class GameScene extends Phaser.Scene {
         ? createDailyGameConfig(new Date().toISOString().slice(0, 10))
         : createStandardGameConfig(difficulty, this.newGameSeed());
     }
+
+    if (navigationVersion !== this.navigationVersion) return;
 
     this.clearScreen();
     this.currentGameRun = run;
@@ -987,6 +993,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private showLeaderboard() {
+    this.navigationVersion += 1;
     this.syncPath("/leaderboard");
     this.clearScreen();
     const container = document.getElementById("app");
@@ -1007,6 +1014,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private showAchievements() {
+    this.navigationVersion += 1;
     this.syncPath("/achievements");
     this.clearScreen();
 
