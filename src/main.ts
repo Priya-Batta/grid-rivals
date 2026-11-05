@@ -255,9 +255,12 @@ class GameScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true });
 
       this.add.text(280, y, mode.toUpperCase(), {
-        fontSize: "21px",
-        color: "#1e293b",
-        fontStyle: "bold"
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "25px",
+        color: "#172554",
+        fontStyle: "bold",
+        stroke: "#ffffff",
+        strokeThickness: 0.5
       }).setOrigin(0.5);
 
       button.on("pointerdown", () => {
@@ -277,15 +280,18 @@ class GameScene extends Phaser.Scene {
 
     // Daily Challenge button
     const dailyButton = this.add.rectangle(
-      280, 580, 290, 62, 0x10b981
+      280, 580, 290, 62, 0xd1fae5
     )
       .setStrokeStyle(2, 0x6ee7b7)
       .setInteractive({ useHandCursor: true });
 
     this.add.text(280, 580, "★  DAILY CHALLENGE", {
-      fontSize: "20px",
-      color: "#1e293b",
-      fontStyle: "bold"
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "23px",
+      color: "#14532d",
+      fontStyle: "bold",
+      stroke: "#ffffff",
+      strokeThickness: 0.5
     }).setOrigin(0.5);
 
     dailyButton.on("pointerdown", () => {
@@ -297,7 +303,7 @@ class GameScene extends Phaser.Scene {
     });
 
     dailyButton.on("pointerout", () => {
-      dailyButton.setFillStyle(0x10b981);
+      dailyButton.setFillStyle(0xd1fae5);
     });
 
     // Player Statistics button
@@ -1204,7 +1210,7 @@ new Phaser.Game({
   height: 920,
   parent: "app",
   backgroundColor: "#f5f7ff",
-  resolution: Math.min(window.devicePixelRatio || 1, 2),
+  resolution: Math.min(window.devicePixelRatio || 1, 3),
   render: { antialias: true, roundPixels: false },
   scene: [GameScene],
   scale: {
