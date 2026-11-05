@@ -193,8 +193,8 @@ export function calculateTileScore(tileValue: number): number {
 }
 
 export function maxFinalScore(difficulty: Difficulty): number {
-  const { maxTileValue } = DIFFICULTY_RULES[difficulty];
-  return WIN_SCORE - 10 + calculateTileScore(maxTileValue);
+  const { maxTileValue, moves } = DIFFICULTY_RULES[difficulty];
+  return moves * calculateTileScore(maxTileValue);
 }
 
 export function maxMovesForDifficulty(difficulty: Difficulty): number {
