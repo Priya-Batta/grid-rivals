@@ -88,7 +88,7 @@ function testScores() {
   recordTileClaim(profile, 200);
   assert(profile.xp === before, "High Scorer XP is paid once");
   const champion = recordTileClaim(profile, 240);
-  assert(champion.includes("champion"), "240 points unlocks Champion");
+  assert(champion.includes("champion"), "320 points unlocks Champion");
   assert(profile.xp === 230, "score achievement XP is awarded once each");
 }
 
@@ -115,12 +115,12 @@ function testPerfectStrategist() {
   assert(!scoreOnly.includes("perfect-strategist"), "score alone does not count as a win");
   const belowTarget = recordGameCompletion(profile, 190, false, 0, 0, 3).unlocks;
   assert(!belowTarget.includes("perfect-strategist"), "a sub-target game does not count as a win");
-  const tooLate = recordGameCompletion(profile, 200, false, 0, 0, 0).unlocks;
-  assert(!tooLate.includes("perfect-strategist"), "a game ending without moves does not count");
-  const win = recordGameCompletion(profile, 200, false, 0, 0, 3).unlocks;
-  assert(win.includes("perfect-strategist"), "a 200-point victory with moves left unlocks Perfect Strategist");
+  const ordinaryWin = recordGameCompletion(profile, 200, false, 0, 0, 0).unlocks;
+  assert(!ordinaryWin.includes("perfect-strategist"), "a normal victory does not unlock Perfect Strategist");
+  const perfectWin = recordGameCompletion(profile, 300, false, 0, 0, 0).unlocks;
+  assert(perfectWin.includes("perfect-strategist"), "a 300-point victory after all moves unlocks Perfect Strategist");
 const before = profile.xp;
-const secondWin = recordGameCompletion(profile, 240, false, 0, 0, 2);
+const secondWin = recordGameCompletion(profile, 320, false, 0, 0, 0);
 
 assert(
   !secondWin.unlocks.includes("perfect-strategist"),
@@ -133,7 +133,7 @@ assert(
 );
 
 assert(
-  profile.xp === before + gameRewardXp(240, false) + achievementById("champion").xp,
+  profile.xp === before + gameRewardXp(320, false) + achievementById("champion").xp,
   "only the new Champion reward and game XP are awarded"
 );
 }
