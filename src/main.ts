@@ -1,5 +1,6 @@
 
 import Phaser from "phaser";
+import { resolveAppRoute } from "./app/routes.ts";
 import "./style.css";
 import {
   applyMove,
@@ -118,38 +119,34 @@ class GameScene extends Phaser.Scene {
   }
 
   private renderPath(pathname: string) {
-    const path = pathname.replace(/\/+$/, "") || "/";
-    switch (path) {
-      case "/":
+    const route = resolveAppRoute(pathname);
+
+    switch (route.type) {
+      case "menu":
         this.showMenu();
         return;
-      case "/play/easy":
-      case "/play/medium":
-      case "/play/hard": {
-        const difficulty = path.slice("/play/".length);
+      case "game":
         this.isDailyChallenge = false;
-        this.difficulty = (difficulty[0].toUpperCase() + difficulty.slice(1)) as Difficulty;
+        this.difficulty = route.difficulty;
         void this.startGame();
         return;
-      }
-      case "/daily":
+      case "daily":
         this.startDailyChallenge();
         return;
-      case "/statistics":
+      case "statistics":
         this.showStatistics();
         return;
-      case "/achievements":
+      case "achievements":
         this.showAchievements();
         return;
-      case "/leaderboard":
+      case "leaderboard":
         this.showLeaderboard();
         return;
-      default:
+      case "not-found":
         this.syncPath("/", true);
         this.showMenu();
     }
   }
-
   private clearScreen() {
     this.leaderboardView?.destroy();
     this.leaderboardView = null;
