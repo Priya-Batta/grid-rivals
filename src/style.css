@@ -470,3 +470,161 @@ canvas {
     padding: 2px;
   }
 }
+
+
+/* Grid Rivals — bright arcade visual system */
+:root {
+  color-scheme: light;
+  --page: #f5f7ff;
+  --surface: #ffffff;
+  --surface-soft: #eef2ff;
+  --ink: #1e293b;
+  --muted: #64748b;
+  --line: #dbe3f3;
+  --blue: #4f46e5;
+  --cyan: #0284c7;
+  --mint: #d1fae5;
+  --coral: #ffedd5;
+  --gold: #d97706;
+}
+html, body {
+  background: var(--page);
+  color: var(--ink);
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+#app {
+  background:
+    radial-gradient(ellipse at 12% 8%, rgba(129, 140, 248, .16), transparent 34%),
+    radial-gradient(ellipse at 88% 86%, rgba(45, 212, 191, .14), transparent 32%),
+    linear-gradient(135deg, #f8faff 0%, #eef4ff 52%, #f7fbff 100%);
+}
+canvas {
+  filter: drop-shadow(0 18px 38px rgba(64, 83, 150, .14));
+}
+.leaderboard-overlay {
+  color: var(--ink);
+  background:
+    radial-gradient(ellipse at 8% 0%, rgba(129, 140, 248, .16), transparent 38%),
+    radial-gradient(ellipse at 100% 100%, rgba(45, 212, 191, .14), transparent 35%),
+    #f5f7ff;
+  font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+}
+.leaderboard-shell {
+  min-height: calc(100dvh - clamp(24px, 6vw, 56px));
+  border: 1px solid #dbe3f3;
+  border-radius: 24px;
+  color: var(--ink);
+  background: rgba(255,255,255,.94);
+  box-shadow: 0 20px 60px rgba(64, 83, 150, .12);
+}
+.leaderboard-header { border-color: var(--line); }
+.leaderboard-header h1 { color: #1e293b; letter-spacing: -.04em; }
+.leaderboard-header p { color: var(--blue); font-weight: 800; letter-spacing: .12em; }
+.leaderboard-icon-button, .leaderboard-button {
+  border: 1px solid #c7d2fe;
+  border-radius: 12px;
+  color: #fff;
+  background: linear-gradient(135deg, #4f46e5, #0ea5e9);
+  font-family: inherit;
+  box-shadow: 0 5px 14px rgba(79,70,229,.16);
+  transition: transform .16s ease, box-shadow .16s ease, filter .16s ease;
+}
+.leaderboard-button:hover, .leaderboard-icon-button:hover {
+  background: linear-gradient(135deg, #4338ca, #0284c7);
+  transform: translateY(-1px);
+  box-shadow: 0 8px 18px rgba(79,70,229,.2);
+}
+.leaderboard-button--quiet {
+  color: #334155;
+  border-color: #dbe3f3;
+  background: #eef2ff;
+  box-shadow: none;
+}
+.leaderboard-button--quiet:hover { color: #1e293b; background: #e0e7ff; }
+.leaderboard-profile { border-color: var(--line); }
+.leaderboard-section-heading h2 { color: #4f46e5; letter-spacing: .04em; }
+.leaderboard-name-form label, .leaderboard-filter > span { color: #64748b; }
+.leaderboard-name-form input, .leaderboard-filter select {
+  border: 1px solid #dbe3f3;
+  border-radius: 11px;
+  color: #1e293b;
+  background: #f8faff;
+  font-family: inherit;
+}
+.leaderboard-name-form input:focus, .leaderboard-filter select:focus,
+.leaderboard-button:focus-visible, .leaderboard-icon-button:focus-visible {
+  outline: 3px solid rgba(99,102,241,.3);
+  outline-offset: 2px;
+}
+.leaderboard-profile-stats { gap: 12px; }
+.leaderboard-stat {
+  border: 1px solid #e0e7ff;
+  border-left: 3px solid #6366f1;
+  border-radius: 14px;
+  background: linear-gradient(145deg, #f8faff, #eef2ff);
+}
+.leaderboard-stat span { color: #64748b; }
+.leaderboard-stat strong { color: #1e293b; }
+.leaderboard-entries { border-color: var(--line); }
+.leaderboard-entries > .leaderboard-section-heading { padding-top: 18px; }
+.leaderboard-row {
+  border: 1px solid #e5eaf5;
+  border-radius: 13px;
+  background: #fbfcff;
+  transition: transform .15s ease, box-shadow .15s ease;
+}
+.leaderboard-row:hover {
+  transform: translateY(-1px);
+  box-shadow: 0 6px 16px rgba(64,83,150,.08);
+}
+.leaderboard-row--top-1 { border-color: #f5d78e; background: linear-gradient(100deg,#fff7df,#fffdf7); }
+.leaderboard-row--top-2 { border-color: #d5dce8; background: #f8fafc; }
+.leaderboard-row--top-3 { border-color: #f2c9ad; background: #fff8f3; }
+.leaderboard-row--current { box-shadow: inset 3px 0 #4f46e5; }
+.leaderboard-rank { color: #d97706; }
+.leaderboard-player strong { color: #1e293b; }
+.leaderboard-player span, .leaderboard-status { color: #64748b; }
+.leaderboard-score { color: #15803d; }
+.leaderboard-state { color: #64748b; }
+.leaderboard-footer { border-color: var(--line); }
+@media (prefers-reduced-motion: reduce) {
+  *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
+}
+
+
+/* Readability pass: larger type, clearer contrast, and sharper game canvas */
+html, body, button, input, select {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+canvas {
+  image-rendering: auto;
+}
+.leaderboard-header h1 { font-size: clamp(25px, 4.5vw, 34px); }
+.leaderboard-header p { font-size: 13px; }
+.leaderboard-section-heading h2 { font-size: 17px; }
+.leaderboard-section-heading p,
+.leaderboard-status,
+.leaderboard-state { font-size: 14px; }
+.leaderboard-button { font-size: 14px; }
+.leaderboard-name-form label,
+.leaderboard-filter > span { font-size: 13px; }
+.leaderboard-name-form input,
+.leaderboard-filter select { font-size: 15px; }
+.leaderboard-stat span { font-size: 12px; }
+.leaderboard-stat strong { font-size: 19px; }
+.leaderboard-column-labels { font-size: 12px; }
+.leaderboard-player strong { font-size: 16px; }
+.leaderboard-player span { font-size: 12px; }
+.leaderboard-rank { font-size: 19px; }
+.leaderboard-score { font-size: 20px; }
+@media (max-width: 560px) {
+  .leaderboard-header h1 { font-size: 25px; }
+  .leaderboard-name-form label,
+  .leaderboard-filter > span { font-size: 12px; }
+  .leaderboard-stat span { font-size: 11px; }
+  .leaderboard-stat strong { font-size: 16px; }
+  .leaderboard-player strong { font-size: 15px; }
+  .leaderboard-player span { font-size: 11px; }
+}

@@ -42,6 +42,7 @@ type Tile = {
 };
 
 class GameScene extends Phaser.Scene {
+  private audioContext?: AudioContext;
   private grid: Tile[][] = [];
   private rulesState: GameState | undefined;
   private score = 0;
@@ -67,7 +68,7 @@ class GameScene extends Phaser.Scene {
     if (this.submissionRetryAvailable && this.scoreSubmissionText?.active) {
       this.scoreSubmissionText
         .setText("CONNECTION RESTORED · TAP TO RETRY")
-        .setColor("#fbbf24");
+        .setColor("#d97706");
     }
   };
 
@@ -82,6 +83,8 @@ class GameScene extends Phaser.Scene {
   private readonly gridSpan = 8 * 63 + 7 * 4;
   private readonly startX = (560 - (8 * 63 + 7 * 4)) / 2;
   private readonly startY = 312;
+  private navigationVersion = 0;
+  private readonly popStateHandler = () => this.renderPath(window.location.pathname);
 
   constructor() {
     super("GameScene");
@@ -89,14 +92,62 @@ class GameScene extends Phaser.Scene {
 
   create() {
     window.addEventListener("online", this.onlineHandler);
+    window.addEventListener("popstate", this.popStateHandler);
     this.events.once(Phaser.Scenes.Events.DESTROY, () => {
       window.removeEventListener("online", this.onlineHandler);
+      window.removeEventListener("popstate", this.popStateHandler);
+      if (this.audioContext && this.audioContext.state !== "closed") {
+        void this.audioContext.close();
+      }
+      this.audioContext = undefined;
     });
 
     const loaded = loadProfile();
     this.profile = loaded.profile;
-    this.showMenu();
+    this.renderPath(window.location.pathname);
     this.presentUnlocks(loaded.freshUnlocks);
+  }
+
+  private syncPath(path: string, replace = false) {
+    if (window.location.pathname === path) return;
+    if (replace) {
+      window.history.replaceState({}, "", path);
+    } else {
+      window.history.pushState({}, "", path);
+    }
+  }
+
+  private renderPath(pathname: string) {
+    const path = pathname.replace(/\/+$/, "") || "/";
+    switch (path) {
+      case "/":
+        this.showMenu();
+        return;
+      case "/play/easy":
+      case "/play/medium":
+      case "/play/hard": {
+        const difficulty = path.slice("/play/".length);
+        this.isDailyChallenge = false;
+        this.difficulty = (difficulty[0].toUpperCase() + difficulty.slice(1)) as Difficulty;
+        void this.startGame();
+        return;
+      }
+      case "/daily":
+        this.startDailyChallenge();
+        return;
+      case "/statistics":
+        this.showStatistics();
+        return;
+      case "/achievements":
+        this.showAchievements();
+        return;
+      case "/leaderboard":
+        this.showLeaderboard();
+        return;
+      default:
+        this.syncPath("/", true);
+        this.showMenu();
+    }
   }
 
   private clearScreen() {
@@ -156,11 +207,13 @@ class GameScene extends Phaser.Scene {
   }
 
   private showStatistics() {
+    this.navigationVersion += 1;
+    this.syncPath("/statistics");
     this.clearScreen();
 
     this.add.text(280, 100, "PLAYER STATISTICS", {
-      fontSize: "26px",
-      color: "#ffffff",
+      fontSize: "28px",
+      color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
@@ -181,17 +234,17 @@ class GameScene extends Phaser.Scene {
 
     stats.forEach((stat, index) => {
       this.add.text(280, 200 + index * 65, stat, {
-        fontSize: "19px",
-        color: "#4ade80",
-        backgroundColor: "#172033",
+        fontSize: "21px",
+        color: "#15803d",
+        backgroundColor: "#ffffff",
         padding: { x: 20, y: 12 }
       }).setOrigin(0.5);
     });
 
     const backButton = this.add.text(280, 620, "BACK TO MENU", {
-      fontSize: "17px",
+      fontSize: "19px",
       color: "#ffffff",
-      backgroundColor: "#2563eb",
+      backgroundColor: "#4f46e5",
       padding: { x: 22, y: 13 }
     })
       .setOrigin(0.5)
@@ -201,32 +254,34 @@ class GameScene extends Phaser.Scene {
   }
 
   private showMenu() {
+    this.navigationVersion += 1;
+    this.syncPath("/");
     this.isDailyChallenge = false;
     this.clearScreen();
 
     // Background decoration
-    this.add.rectangle(280, 460, 520, 880, 0x0f172a)
-      .setStrokeStyle(2, 0x1e293b);
+    this.add.rectangle(280, 460, 520, 880, 0xf5f7ff)
+      .setStrokeStyle(2, 0xdbe3f3);
 
-    this.add.rectangle(280, 176, 150, 4, 0x22d3ee);
+    this.add.rectangle(280, 176, 150, 4, 0x0ea5e9);
     this.drawLevelBar(280, 204, 280);
 
     // Game title
     this.add.text(280, 95, "GRID RIVALS", {
-      fontSize: "40px",
-      color: "#ffffff",
+      fontSize: "42px",
+      color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
     this.add.text(280, 145, "CONQUER THE GRID", {
-      fontSize: "13px",
-      color: "#22d3ee",
+      fontSize: "15px",
+      color: "#0284c7",
       letterSpacing: 4
     }).setOrigin(0.5);
 
     this.add.text(280, 268, "CHOOSE YOUR GAME", {
-      fontSize: "18px",
-      color: "#ffffff",
+      fontSize: "20px",
+      color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
@@ -234,9 +289,9 @@ class GameScene extends Phaser.Scene {
     const modes: Difficulty[] = ["Easy", "Medium", "Hard"];
 
     const modeColors = [
-      { normal: 0x166534, hover: 0x15803d },
-      { normal: 0x1e40af, hover: 0x2563eb },
-      { normal: 0x991b1b, hover: 0xdc2626 }
+      { normal: 0xdcfce7, hover: 0xbbf7d0 },
+      { normal: 0xdbeafe, hover: 0xbfdbfe },
+      { normal: 0xffedd5, hover: 0xfed7aa }
     ];
 
     modes.forEach((mode, index) => {
@@ -246,13 +301,16 @@ class GameScene extends Phaser.Scene {
       const button = this.add.rectangle(
         280, y, 250, 56, colors.normal
       )
-        .setStrokeStyle(2, 0x475569)
+        .setStrokeStyle(2, 0xc7d2fe)
         .setInteractive({ useHandCursor: true });
 
       this.add.text(280, y, mode.toUpperCase(), {
-        fontSize: "19px",
-        color: "#ffffff",
-        fontStyle: "bold"
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "25px",
+        color: "#172554",
+        fontStyle: "bold",
+        stroke: "#ffffff",
+        strokeThickness: 0.5
       }).setOrigin(0.5);
 
       button.on("pointerdown", () => {
@@ -272,15 +330,18 @@ class GameScene extends Phaser.Scene {
 
     // Daily Challenge button
     const dailyButton = this.add.rectangle(
-      280, 580, 290, 62, 0x047857
+      280, 580, 290, 62, 0xd1fae5
     )
-      .setStrokeStyle(2, 0x34d399)
+      .setStrokeStyle(2, 0x6ee7b7)
       .setInteractive({ useHandCursor: true });
 
     this.add.text(280, 580, "★  DAILY CHALLENGE", {
-      fontSize: "18px",
-      color: "#ffffff",
-      fontStyle: "bold"
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "23px",
+      color: "#14532d",
+      fontStyle: "bold",
+      stroke: "#ffffff",
+      strokeThickness: 0.5
     }).setOrigin(0.5);
 
     dailyButton.on("pointerdown", () => {
@@ -288,23 +349,23 @@ class GameScene extends Phaser.Scene {
     });
 
     dailyButton.on("pointerover", () => {
-      dailyButton.setFillStyle(0x059669);
+      dailyButton.setFillStyle(0xbbf7d0);
     });
 
     dailyButton.on("pointerout", () => {
-      dailyButton.setFillStyle(0x047857);
+      dailyButton.setFillStyle(0xd1fae5);
     });
 
     // Player Statistics button
     const statsButton = this.add.rectangle(
-      280, 656, 250, 48, 0x5b21b6
+      280, 656, 250, 48, 0xede9fe
     )
-      .setStrokeStyle(2, 0xa78bfa)
+      .setStrokeStyle(2, 0xc4b5fd)
       .setInteractive({ useHandCursor: true });
 
     this.add.text(280, 656, "PLAYER STATISTICS", {
-      fontSize: "16px",
-      color: "#ffffff",
+      fontSize: "18px",
+      color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
@@ -313,46 +374,46 @@ class GameScene extends Phaser.Scene {
     });
 
     statsButton.on("pointerover", () => {
-      statsButton.setFillStyle(0x7c3aed);
+      statsButton.setFillStyle(0xddd6fe);
     });
 
     statsButton.on("pointerout", () => {
-      statsButton.setFillStyle(0x5b21b6);
+      statsButton.setFillStyle(0xede9fe);
     });
 
     const achievementsButton = this.add.rectangle(
-      280, 724, 290, 48, 0x0e7490
+      280, 724, 290, 48, 0xe0f2fe
     )
-      .setStrokeStyle(2, 0x22d3ee)
+      .setStrokeStyle(2, 0x0ea5e9)
       .setInteractive({ useHandCursor: true });
 
     this.add.text(280, 724, "ACHIEVEMENTS", {
-      fontFamily: "Courier New, Courier, monospace",
-      fontSize: "16px",
-      color: "#ffffff",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "18px",
+      color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
     achievementsButton.on("pointerdown", () => this.showAchievements());
-    achievementsButton.on("pointerover", () => achievementsButton.setFillStyle(0x0891b2));
-    achievementsButton.on("pointerout", () => achievementsButton.setFillStyle(0x0e7490));
+    achievementsButton.on("pointerover", () => achievementsButton.setFillStyle(0xcffafe));
+    achievementsButton.on("pointerout", () => achievementsButton.setFillStyle(0xe0f2fe));
 
     const leaderboardButton = this.add.rectangle(
-      280, 780, 290, 48, 0x92400e
+      280, 780, 290, 48, 0xffedd5
     )
       .setStrokeStyle(2, 0xfbbf24)
       .setInteractive({ useHandCursor: true });
 
     this.add.text(280, 780, "GLOBAL LEADERBOARD", {
-      fontFamily: "Courier New, Courier, monospace",
-      fontSize: "16px",
-      color: "#ffffff",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "18px",
+      color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
     leaderboardButton.on("pointerdown", () => this.showLeaderboard());
-    leaderboardButton.on("pointerover", () => leaderboardButton.setFillStyle(0xb45309));
-    leaderboardButton.on("pointerout", () => leaderboardButton.setFillStyle(0x92400e));
+    leaderboardButton.on("pointerover", () => leaderboardButton.setFillStyle(0xfde68a));
+    leaderboardButton.on("pointerout", () => leaderboardButton.setFillStyle(0xffedd5));
 
     // Sound ON/OFF button
     const soundButton = this.add.text(
@@ -360,10 +421,10 @@ class GameScene extends Phaser.Scene {
       840,
       this.soundEnabled ? "SOUND: ON" : "SOUND: OFF",
       {
-        fontFamily: "Courier New, Courier, monospace",
-        fontSize: "15px",
-        color: "#ffffff",
-        backgroundColor: "#334155",
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "17px",
+        color: "#1e293b",
+        backgroundColor: "#e0e7ff",
         padding: { x: 22, y: 14 }
       }
     )
@@ -371,11 +432,11 @@ class GameScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     soundButton.on("pointerover", () => {
-      soundButton.setBackgroundColor("#475569");
+      soundButton.setBackgroundColor("#c7d2fe");
     });
 
     soundButton.on("pointerout", () => {
-      soundButton.setBackgroundColor("#334155");
+      soundButton.setBackgroundColor("#e0e7ff");
     });
 
     soundButton.on("pointerdown", () => {
@@ -393,21 +454,23 @@ class GameScene extends Phaser.Scene {
 
     // Footer
     this.add.text(280, 894, "CAPTURE  •  EXPAND  •  CONQUER", {
-      fontSize: "12px",
+      fontSize: "14px",
       color: "#64748b",
       letterSpacing: 2
     }).setOrigin(0.5);
   }
 
   private async startGame() {
-    this.clearScreen();
+    const navigationVersion = ++this.navigationVersion;
     const mode: StartGameMode = this.isDailyChallenge ? "daily" : "standard";
+    this.syncPath(this.isDailyChallenge ? "/daily" : `/play/${this.difficulty.toLowerCase()}`);
+    this.clearScreen();
     const difficulty = this.difficulty;
-    this.add.rectangle(280, 460, 520, 880, 0x0f172a).setStrokeStyle(2, 0x1e293b);
+    this.add.rectangle(280, 460, 520, 880, 0xf5f7ff).setStrokeStyle(2, 0xdbe3f3);
     this.add.text(280, 440, "STARTING VERIFIED RUN...", {
-      fontFamily: "Courier New, Courier, monospace",
-      fontSize: "16px",
-      color: "#22d3ee",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "18px",
+      color: "#0284c7",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
@@ -425,6 +488,8 @@ class GameScene extends Phaser.Scene {
         : createStandardGameConfig(difficulty, this.newGameSeed());
     }
 
+    if (navigationVersion !== this.navigationVersion) return;
+
     this.clearScreen();
     this.currentGameRun = run;
     this.rulesState = createGameState(config);
@@ -435,13 +500,13 @@ class GameScene extends Phaser.Scene {
     const hudY = 248;
     const hudW = this.gridSpan;
 
-    this.add.rectangle(cx, hudY, hudW, 52, 0x111827)
-      .setStrokeStyle(2, 0x1e293b);
+    this.add.rectangle(cx, hudY, hudW, 52, 0xeaf0ff)
+      .setStrokeStyle(2, 0xdbe3f3);
 
     this.add.text(cx, 168, "GRID RIVALS", {
-      fontFamily: "Courier New, Courier, monospace",
-      fontSize: "34px",
-      color: "#ffffff",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "36px",
+      color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
@@ -452,40 +517,40 @@ class GameScene extends Phaser.Scene {
         ? this.isDailyChallenge ? "DAILY CHALLENGE" : this.difficulty.toUpperCase() + " MODE"
         : "PRACTICE MODE · NOT VERIFIED",
       {
-        fontFamily: "Courier New, Courier, monospace",
-        fontSize: "13px",
-        color: "#4ade80",
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "15px",
+        color: "#15803d",
         letterSpacing: 2
       }
     ).setOrigin(0.5);
 
     this.scoreText = this.add.text(this.startX + 16, hudY, "SCORE: 0", {
-      fontFamily: "Courier New, Courier, monospace",
-      fontSize: "16px",
-      color: "#60a5fa",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "18px",
+      color: "#4f46e5",
       fontStyle: "bold"
     }).setOrigin(0, 0.5);
 
     this.movesText = this.add.text(cx, hudY, `MOVES: ${this.moves}`, {
-      fontFamily: "Courier New, Courier, monospace",
-      fontSize: "16px",
-      color: "#fbbf24",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "18px",
+      color: "#d97706",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
-    const home = this.add.rectangle(78, 96, 124, 44, 0x334155)
+    const home = this.add.rectangle(78, 96, 124, 44, 0xe2e8f0)
       .setStrokeStyle(2, 0x64748b)
       .setInteractive({ useHandCursor: true });
 
     const homeLabel = this.add.text(78, 96, "← HOME", {
-      fontFamily: "Courier New, Courier, monospace",
-      fontSize: "15px",
-      color: "#ffffff",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "17px",
+      color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
-    home.on("pointerover", () => home.setFillStyle(0x475569));
-    home.on("pointerout", () => home.setFillStyle(0x334155));
+    home.on("pointerover", () => home.setFillStyle(0xc7d2fe));
+    home.on("pointerout", () => home.setFillStyle(0xe2e8f0));
     home.on("pointerdown", () => this.showMenu());
     homeLabel.setInteractive({ useHandCursor: true });
     homeLabel.on("pointerdown", () => this.showMenu());
@@ -497,18 +562,18 @@ class GameScene extends Phaser.Scene {
     const best = Number(localStorage.getItem(bestKey) || 0);
 
     this.bestText = this.add.text(this.startX + hudW - 16, hudY, `BEST: ${best}`, {
-      fontFamily: "Courier New, Courier, monospace",
-      fontSize: "15px",
-      color: "#4ade80",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "17px",
+      color: "#15803d",
       fontStyle: "bold"
     }).setOrigin(1, 0.5);
 
     this.add.text(cx, 286, this.currentGameRun
       ? `REACH ${WIN_SCORE} TO WIN  •  CAPTURE ADJACENT CELLS`
       : "LOCAL PRACTICE · SCORE NOT SUBMITTED", {
-      fontFamily: "Courier New, Courier, monospace",
-      fontSize: "12px",
-      color: "#94a3b8"
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "14px",
+      color: "#64748b"
     }).setOrigin(0.5);
 
     const framePad = 8;
@@ -517,8 +582,8 @@ class GameScene extends Phaser.Scene {
       this.startY + this.gridSpan / 2,
       this.gridSpan + framePad * 2,
       this.gridSpan + framePad * 2,
-      0x0f172a
-    ).setStrokeStyle(2, 0x1e293b);
+      0xf5f7ff
+    ).setStrokeStyle(2, 0xdbe3f3);
 
     this.createGrid();
     this.refreshBoard();
@@ -549,7 +614,7 @@ class GameScene extends Phaser.Scene {
           py + this.cell / 2,
           this.cell,
           this.cell,
-          0x111827
+          0xeaf0ff
         );
 
         const label = this.add.text(
@@ -557,12 +622,13 @@ class GameScene extends Phaser.Scene {
           py + this.cell / 2,
           isStart ? "★" : String(value),
           {
-            fontFamily: "Courier New, Courier, monospace",
-            fontSize: isStart ? "28px" : "24px",
-            color: "#ffffff",
-            fontStyle: "bold"
+            fontFamily: "Arial, Helvetica, sans-serif",
+            fontSize: isStart ? "30px" : "28px",
+            color: "#1e293b",
+            fontStyle: "bold",
           }
-        ).setOrigin(0.5);
+        ).setOrigin(0.5)
+          .setResolution(4);
 
         const tile: Tile = {
           x, y, value,
@@ -620,10 +686,10 @@ class GameScene extends Phaser.Scene {
       tile.rect.y - 10,
       `+${pointsEarned}`,
       {
-        fontSize: "23px",
-        color: "#4ade80",
+        fontSize: "24px",
+        color: "#15803d",
         fontStyle: "bold",
-        stroke: "#0b1220",
+        stroke: "#f5f7ff",
         strokeThickness: 5
       }
     ).setOrigin(0.5).setDepth(10);
@@ -660,20 +726,20 @@ class GameScene extends Phaser.Scene {
 
         if (tile.claimed) {
           // Captured territory: blue
-          tile.rect.setFillStyle(0x1d4ed8);
-          tile.rect.setStrokeStyle(2, 0x60a5fa);
-          tile.label.setColor("#ffffff");
+          tile.rect.setFillStyle(0x4f46e5);
+          tile.rect.setStrokeStyle(2, 0x818cf8);
+          tile.label.setColor("#1e293b");
 
         } else if (available) {
           // Available territory: teal
-          tile.rect.setFillStyle(0x164e63);
-          tile.rect.setStrokeStyle(2, 0x22d3ee);
-          tile.label.setColor("#67e8f9");
+          tile.rect.setFillStyle(0xd1fae5);
+          tile.rect.setStrokeStyle(2, 0x0ea5e9);
+          tile.label.setColor("#047857");
 
         } else {
           // Locked territory: dark grey
-          tile.rect.setFillStyle(0x111827);
-          tile.rect.setStrokeStyle(1, 0x273449);
+          tile.rect.setFillStyle(0xeaf0ff);
+          tile.rect.setStrokeStyle(1, 0xcbd5e1);
           tile.label.setColor("#64748b");
         }
       }
@@ -724,7 +790,7 @@ class GameScene extends Phaser.Scene {
     const panelH = this.isDailyChallenge ? 428 : 376;
     const top = cy - panelH / 2;
 
-    const dim = this.add.rectangle(cx, cy, this.viewW, this.viewH, 0x020617, 0.82)
+    const dim = this.add.rectangle(cx, cy, this.viewW, this.viewH, 0x172554, 0.38)
       .setDepth(30)
       .setInteractive();
 
@@ -732,20 +798,20 @@ class GameScene extends Phaser.Scene {
       /* Swallow clicks on the board underneath the modal. */
     });
 
-    this.add.rectangle(cx, cy, panelW, panelH, 0x172033)
-      .setStrokeStyle(3, 0x22d3ee)
+    this.add.rectangle(cx, cy, panelW, panelH, 0xffffff)
+      .setStrokeStyle(3, 0x0ea5e9)
       .setDepth(31);
 
-    this.add.rectangle(cx, top + 4, panelW, 6, 0x22d3ee).setDepth(32);
+    this.add.rectangle(cx, top + 4, panelW, 6, 0x0ea5e9).setDepth(32);
 
     this.add.text(
       cx,
       top + 52,
       this.isDailyChallenge ? "DAILY CHALLENGE COMPLETE" : won ? "VICTORY" : "GAME OVER",
       {
-        fontFamily: "Courier New, Courier, monospace",
+        fontFamily: "Arial, Helvetica, sans-serif",
         fontSize: this.isDailyChallenge ? "18px" : "28px",
-        color: "#ffffff",
+        color: "#1e293b",
         fontStyle: "bold"
       }
     ).setOrigin(0.5).setDepth(32);
@@ -755,18 +821,18 @@ class GameScene extends Phaser.Scene {
       this.isDailyChallenge ? top + 258 : top + 216,
       this.currentGameRun ? "VERIFYING MOVE TRANSCRIPT..." : "PRACTICE SCORE · NOT VERIFIED",
       {
-        fontFamily: "Courier New, Courier, monospace",
-        fontSize: "10px",
-        color: "#fbbf24",
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "13px",
+        color: "#d97706",
         fontStyle: "bold"
       }
     ).setOrigin(0.5).setDepth(32);
     if (this.currentGameRun) void this.submitGameResult();
 
     this.finalScoreText = this.add.text(cx, top + 108, `FINAL SCORE: ${this.score}`, {
-      fontFamily: "Courier New, Courier, monospace",
-      fontSize: "22px",
-      color: "#4ade80",
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "23px",
+      color: "#15803d",
       fontStyle: "bold"
     }).setOrigin(0.5).setDepth(32);
 
@@ -775,9 +841,9 @@ class GameScene extends Phaser.Scene {
       top + 150,
       `${this.isDailyChallenge ? "TODAY'S BEST" : "PERSONAL BEST"}: ${best}`,
       {
-        fontFamily: "Courier New, Courier, monospace",
-        fontSize: "15px",
-        color: "#94a3b8"
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "17px",
+        color: "#64748b"
       }
     ).setOrigin(0.5).setDepth(32);
 
@@ -787,9 +853,9 @@ class GameScene extends Phaser.Scene {
         top + 190,
         `DAILY STREAK: ${this.dailyStreak} DAYS`,
         {
-          fontFamily: "Courier New, Courier, monospace",
-          fontSize: "16px",
-          color: "#fbbf24",
+          fontFamily: "Arial, Helvetica, sans-serif",
+          fontSize: "18px",
+          color: "#d97706",
           fontStyle: "bold"
         }
       ).setOrigin(0.5).setDepth(32);
@@ -801,9 +867,9 @@ class GameScene extends Phaser.Scene {
       this.isDailyChallenge ? top + 228 : top + 188,
       this.currentGameRun ? "SERVER PROGRESSION PENDING" : `LOCAL +${reward.gameXp} XP  •  LEVEL ${progress.level}`,
       {
-        fontFamily: "Courier New, Courier, monospace",
-        fontSize: "15px",
-        color: "#fbbf24",
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "17px",
+        color: "#d97706",
         fontStyle: "bold"
       }
     ).setOrigin(0.5).setDepth(32);
@@ -813,8 +879,8 @@ class GameScene extends Phaser.Scene {
     const buttonW = 420;
     const buttonH = 52;
 
-    const replay = this.add.rectangle(cx, replayY, buttonW, buttonH, 0x2563eb)
-      .setStrokeStyle(2, 0x93c5fd)
+    const replay = this.add.rectangle(cx, replayY, buttonW, buttonH, 0x4f46e5)
+      .setStrokeStyle(2, 0xa5b4fc)
       .setDepth(32)
       .setInteractive({ useHandCursor: true });
 
@@ -823,21 +889,21 @@ class GameScene extends Phaser.Scene {
       replayY,
       this.isDailyChallenge ? "PLAY TODAY'S CHALLENGE AGAIN" : "PLAY AGAIN",
       {
-        fontFamily: "Courier New, Courier, monospace",
+        fontFamily: "Arial, Helvetica, sans-serif",
         fontSize: this.isDailyChallenge ? "14px" : "16px",
-        color: "#ffffff",
+        color: "#1e293b",
         fontStyle: "bold"
       }
     ).setOrigin(0.5).setDepth(33).setInteractive({ useHandCursor: true });
 
     const playAgain = () => this.startGame();
-    replay.on("pointerover", () => replay.setFillStyle(0x3b82f6));
-    replay.on("pointerout", () => replay.setFillStyle(0x2563eb));
+    replay.on("pointerover", () => replay.setFillStyle(0x6366f1));
+    replay.on("pointerout", () => replay.setFillStyle(0x4f46e5));
     replay.on("pointerdown", playAgain);
     replayLabel.on("pointerdown", playAgain);
 
-    const menu = this.add.rectangle(cx, menuY, buttonW, buttonH, 0x1e293b)
-      .setStrokeStyle(2, 0x60a5fa)
+    const menu = this.add.rectangle(cx, menuY, buttonW, buttonH, 0xdbe3f3)
+      .setStrokeStyle(2, 0x818cf8)
       .setDepth(32)
       .setInteractive({ useHandCursor: true });
 
@@ -846,46 +912,46 @@ class GameScene extends Phaser.Scene {
       menuY,
       this.isDailyChallenge ? "BACK TO MAIN MENU" : "CHANGE DIFFICULTY",
       {
-        fontFamily: "Courier New, Courier, monospace",
-        fontSize: "16px",
-        color: "#93c5fd",
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "18px",
+        color: "#4f46e5",
         fontStyle: "bold"
       }
     ).setOrigin(0.5).setDepth(33).setInteractive({ useHandCursor: true });
 
     const backToMenu = () => this.showMenu();
-    menu.on("pointerover", () => menu.setFillStyle(0x334155));
-    menu.on("pointerout", () => menu.setFillStyle(0x1e293b));
+    menu.on("pointerover", () => menu.setFillStyle(0xe2e8f0));
+    menu.on("pointerout", () => menu.setFillStyle(0xdbe3f3));
     menu.on("pointerdown", backToMenu);
     menuLabel.on("pointerdown", backToMenu);
   }
 
   private drawLevelBar(x: number, y: number, width: number) {
     const progress = levelProgress(this.profile.xp);
-    const font = "Courier New, Courier, monospace";
+    const font = "Arial, Helvetica, sans-serif";
 
     this.add.text(x, y - 16, `LEVEL ${progress.level}`, {
       fontFamily: font,
-      fontSize: "13px",
-      color: "#fbbf24",
+      fontSize: "15px",
+      color: "#d97706",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
-    this.add.rectangle(x, y + 6, width, 12, 0x1e293b)
-      .setStrokeStyle(1, 0x334155);
+    this.add.rectangle(x, y + 6, width, 12, 0xdbe3f3)
+      .setStrokeStyle(1, 0xe2e8f0);
 
     const fill = progress.needed === 0
       ? width
       : Math.max(0, Math.min(width, (progress.current / progress.needed) * width));
 
     if (fill > 0) {
-      this.add.rectangle(x - width / 2 + fill / 2, y + 6, fill, 8, 0x22d3ee);
+      this.add.rectangle(x - width / 2 + fill / 2, y + 6, fill, 8, 0x0ea5e9);
     }
 
     this.add.text(x, y + 24, `${progress.current} / ${progress.needed} XP`, {
       fontFamily: font,
-      fontSize: "11px",
-      color: "#94a3b8"
+      fontSize: "14px",
+      color: "#64748b"
     }).setOrigin(0.5);
   }
 
@@ -899,7 +965,7 @@ class GameScene extends Phaser.Scene {
     this.submissionRetryAvailable = false;
     status.removeAllListeners("pointerdown");
     status.disableInteractive();
-    status.setText("VERIFYING MOVE TRANSCRIPT...").setColor("#fbbf24");
+    status.setText("VERIFYING MOVE TRANSCRIPT...").setColor("#d97706");
 
     try {
       const result = await submitVerifiedGame(run.runId, state.moveHistory);
@@ -910,14 +976,14 @@ class GameScene extends Phaser.Scene {
       this.serverProgressText?.setText(`SERVER XP: ${result.totalXp}  •  LEVEL ${result.playerLevel}`);
       status
         .setText(result.duplicate ? "VERIFIED RESULT ALREADY SAVED" : "GAME VERIFIED AND SAVED")
-        .setColor("#4ade80");
+        .setColor("#15803d");
       void refreshLeaderboardData();
     } catch (error) {
       if (!status.active || this.scoreSubmissionText !== status) return;
       this.submissionRetryAvailable = true;
       status
         .setText("VERIFICATION FAILED · TAP TO RETRY")
-        .setColor("#fbbf24")
+        .setColor("#d97706")
         .setInteractive({ useHandCursor: true });
       status.on("pointerdown", () => void this.submitGameResult());
       if (error instanceof Error) console.warn("Verified game submission failed:", error.message);
@@ -927,6 +993,8 @@ class GameScene extends Phaser.Scene {
   }
 
   private showLeaderboard() {
+    this.navigationVersion += 1;
+    this.syncPath("/leaderboard");
     this.clearScreen();
     const container = document.getElementById("app");
     if (!container) {
@@ -946,38 +1014,40 @@ class GameScene extends Phaser.Scene {
   }
 
   private showAchievements() {
+    this.navigationVersion += 1;
+    this.syncPath("/achievements");
     this.clearScreen();
 
-    const font = "Courier New, Courier, monospace";
+    const font = "Arial, Helvetica, sans-serif";
     const progress = levelProgress(this.profile.xp);
 
-    this.add.rectangle(280, 460, 520, 880, 0x0f172a)
-      .setStrokeStyle(2, 0x1e293b);
+    this.add.rectangle(280, 460, 520, 880, 0xf5f7ff)
+      .setStrokeStyle(2, 0xdbe3f3);
 
     this.add.text(280, 42, "ACHIEVEMENTS", {
       fontFamily: font,
-      fontSize: "26px",
-      color: "#ffffff",
+      fontSize: "28px",
+      color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
     this.add.text(280, 72, `LEVEL ${progress.level}  •  ${this.profile.xp} XP`, {
       fontFamily: font,
-      fontSize: "13px",
-      color: "#fbbf24",
+      fontSize: "15px",
+      color: "#d97706",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
     const barWidth = 280;
-    this.add.rectangle(280, 96, barWidth, 12, 0x1e293b).setStrokeStyle(1, 0x334155);
+    this.add.rectangle(280, 96, barWidth, 12, 0xdbe3f3).setStrokeStyle(1, 0xe2e8f0);
     const fill = Math.max(0, Math.min(barWidth, (progress.current / progress.needed) * barWidth));
     if (fill > 0) {
-      this.add.rectangle(280 - barWidth / 2 + fill / 2, 96, fill, 8, 0x22d3ee);
+      this.add.rectangle(280 - barWidth / 2 + fill / 2, 96, fill, 8, 0x0ea5e9);
     }
     this.add.text(280, 114, `${progress.current} / ${progress.needed} TO NEXT LEVEL`, {
       fontFamily: font,
-      fontSize: "10px",
-      color: "#94a3b8"
+      fontSize: "13px",
+      color: "#64748b"
     }).setOrigin(0.5);
 
     const cardH = 84;
@@ -990,32 +1060,32 @@ class GameScene extends Phaser.Scene {
       const current = achievementProgress(this.profile, achievement.id);
       const ratio = achievement.goal === 0 ? 1 : current / achievement.goal;
 
-      this.add.rectangle(280, y, 492, cardH, unlocked ? 0x132033 : 0x111827)
-        .setStrokeStyle(2, unlocked ? 0x22d3ee : 0x334155);
+      this.add.rectangle(280, y, 492, cardH, unlocked ? 0xdcfce7 : 0xeaf0ff)
+        .setStrokeStyle(2, unlocked ? 0x6ee7b7 : 0xe2e8f0);
 
       this.add.text(50, y - 26, achievement.name.toUpperCase(), {
         fontFamily: font,
-        fontSize: "14px",
-        color: unlocked ? "#ffffff" : "#cbd5e1",
+        fontSize: "16px",
+        color: unlocked ? "#166534" : "#475569",
         fontStyle: "bold"
       }).setOrigin(0, 0.5);
 
       this.add.text(510, y - 26, `+${achievement.xp} XP`, {
         fontFamily: font,
-        fontSize: "12px",
-        color: "#fbbf24",
+        fontSize: "14px",
+        color: "#d97706",
         fontStyle: "bold"
       }).setOrigin(1, 0.5);
 
       this.add.text(50, y - 6, achievement.description, {
         fontFamily: font,
-        fontSize: "11px",
-        color: "#94a3b8"
+        fontSize: "14px",
+        color: "#64748b"
       }).setOrigin(0, 0.5);
 
       const trackX = 250;
       const trackW = 110;
-      this.add.rectangle(trackX, y + 20, trackW, 8, 0x1e293b);
+      this.add.rectangle(trackX, y + 20, trackW, 8, 0xdbe3f3);
       const progressWidth = Math.max(0, Math.min(trackW, ratio * trackW));
       if (progressWidth > 0) {
         this.add.rectangle(
@@ -1029,8 +1099,8 @@ class GameScene extends Phaser.Scene {
 
       this.add.text(314, y + 20, `${current}/${achievement.goal}`, {
         fontFamily: font,
-        fontSize: "11px",
-        color: "#e2e8f0"
+        fontSize: "14px",
+        color: "#334155"
       }).setOrigin(0, 0.5);
 
       const date = unlocked
@@ -1038,23 +1108,23 @@ class GameScene extends Phaser.Scene {
         : "LOCKED";
       this.add.text(50, y + 20, date, {
         fontFamily: font,
-        fontSize: "11px",
-        color: unlocked ? "#67e8f9" : "#64748b",
+        fontSize: "14px",
+        color: unlocked ? "#047857" : "#64748b",
         fontStyle: "bold"
       }).setOrigin(0, 0.5);
 
       this.add.text(510, y + 20, unlocked ? "UNLOCKED" : "", {
         fontFamily: font,
-        fontSize: "11px",
-        color: "#4ade80",
+        fontSize: "14px",
+        color: "#15803d",
         fontStyle: "bold"
       }).setOrigin(1, 0.5);
     });
 
     const back = this.add.text(280, 878, "BACK TO MENU", {
       fontFamily: font,
-      fontSize: "16px",
-      color: "#ffffff",
+      fontSize: "18px",
+      color: "#1e293b",
       backgroundColor: "#2563eb",
       padding: { x: 18, y: 10 }
     })
@@ -1083,28 +1153,28 @@ class GameScene extends Phaser.Scene {
     const generation = this.toastGeneration;
     this.toastActive = true;
 
-    const font = "Courier New, Courier, monospace";
-    const card = this.add.rectangle(280, 118, 460, 86, 0x172033)
+    const font = "Arial, Helvetica, sans-serif";
+    const card = this.add.rectangle(280, 118, 460, 86, 0xffffff)
       .setStrokeStyle(3, 0xfbbf24)
       .setDepth(60)
       .setScale(0.86)
       .setAlpha(0);
     const title = this.add.text(280, 100, "ACHIEVEMENT UNLOCKED", {
       fontFamily: font,
-      fontSize: "12px",
-      color: "#fbbf24",
+      fontSize: "14px",
+      color: "#d97706",
       fontStyle: "bold"
     }).setOrigin(0.5).setDepth(61).setAlpha(0);
     const name = this.add.text(280, 124, achievement.name.toUpperCase(), {
       fontFamily: font,
-      fontSize: "18px",
-      color: "#ffffff",
+      fontSize: "20px",
+      color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5).setDepth(61).setAlpha(0);
     const reward = this.add.text(280, 146, `+${achievement.xp} XP`, {
       fontFamily: font,
-      fontSize: "14px",
-      color: "#4ade80",
+      fontSize: "16px",
+      color: "#15803d",
       fontStyle: "bold"
     }).setOrigin(0.5).setDepth(61).setAlpha(0);
 
@@ -1151,9 +1221,15 @@ class GameScene extends Phaser.Scene {
 
     try {
       const AudioContextClass =
-        window.AudioContext || (window as any).webkitAudioContext;
+        window.AudioContext ||
+        (window as Window & { webkitAudioContext?: typeof AudioContext }).webkitAudioContext;
+      if (!AudioContextClass) return;
 
-      const audioContext = new AudioContextClass();
+      this.audioContext ??= new AudioContextClass();
+      const audioContext = this.audioContext;
+      if (audioContext.state === "suspended") {
+        void audioContext.resume().catch(() => undefined);
+      }
 
       const oscillator = audioContext.createOscillator();
       const gain = audioContext.createGain();
@@ -1176,7 +1252,10 @@ class GameScene extends Phaser.Scene {
       oscillator.start();
       oscillator.stop(audioContext.currentTime + duration);
 
-      oscillator.onended = () => audioContext.close();
+      oscillator.onended = () => {
+        oscillator.disconnect();
+        gain.disconnect();
+      };
     } catch (error) {
       console.warn("Sound could not be played:", error);
     }
@@ -1189,7 +1268,8 @@ new Phaser.Game({
   width: 560,
   height: 920,
   parent: "app",
-  backgroundColor: "#0b1220",
+  backgroundColor: "#f5f7ff",
+  render: { antialias: true, roundPixels: true },
   scene: [GameScene],
   scale: {
     mode: Phaser.Scale.FIT,
