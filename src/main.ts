@@ -525,7 +525,7 @@ class GameScene extends Phaser.Scene {
     }).setOrigin(1, 0.5);
 
     this.add.text(cx, 286, this.currentGameRun
-      ? `REACH ${WIN_SCORE} TO WIN  •  CAPTURE ADJACENT CELLS`
+      ? `REACH ${WIN_SCORE} TO WIN  •  USE ALL MOVES`
       : "LOCAL PRACTICE · SCORE NOT SUBMITTED", {
       fontFamily: "Arial, Helvetica, sans-serif",
       fontSize: "14px",
@@ -669,7 +669,7 @@ class GameScene extends Phaser.Scene {
     // Refresh tile colors
     this.refreshBoard();
 
-    // Reaching the target wins; running out of moves ends the game.
+    // The target is evaluated when the player has used all available moves.
     if (this.rulesState.status !== "playing") {
       this.finishGame();
     }
