@@ -590,3 +590,41 @@ canvas {
 @media (prefers-reduced-motion: reduce) {
   *, *::before, *::after { scroll-behavior: auto !important; transition-duration: .01ms !important; animation-duration: .01ms !important; }
 }
+
+
+/* Readability pass: larger type, clearer contrast, and sharper game canvas */
+html, body, button, input, select {
+  -webkit-font-smoothing: antialiased;
+  -moz-osx-font-smoothing: grayscale;
+  text-rendering: optimizeLegibility;
+}
+canvas {
+  image-rendering: auto;
+}
+.leaderboard-header h1 { font-size: clamp(25px, 4.5vw, 34px); }
+.leaderboard-header p { font-size: 13px; }
+.leaderboard-section-heading h2 { font-size: 17px; }
+.leaderboard-section-heading p,
+.leaderboard-status,
+.leaderboard-state { font-size: 14px; }
+.leaderboard-button { font-size: 14px; }
+.leaderboard-name-form label,
+.leaderboard-filter > span { font-size: 13px; }
+.leaderboard-name-form input,
+.leaderboard-filter select { font-size: 15px; }
+.leaderboard-stat span { font-size: 12px; }
+.leaderboard-stat strong { font-size: 19px; }
+.leaderboard-column-labels { font-size: 12px; }
+.leaderboard-player strong { font-size: 16px; }
+.leaderboard-player span { font-size: 12px; }
+.leaderboard-rank { font-size: 19px; }
+.leaderboard-score { font-size: 20px; }
+@media (max-width: 560px) {
+  .leaderboard-header h1 { font-size: 25px; }
+  .leaderboard-name-form label,
+  .leaderboard-filter > span { font-size: 12px; }
+  .leaderboard-stat span { font-size: 11px; }
+  .leaderboard-stat strong { font-size: 16px; }
+  .leaderboard-player strong { font-size: 15px; }
+  .leaderboard-player span { font-size: 11px; }
+}
