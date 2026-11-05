@@ -17,7 +17,7 @@
 
 - [x] Review current frontend, package scripts, Supabase schema/migration and Edge Function design.
 - [x] Write the target HLD.
-- [ ] Reconcile Supabase setup documentation with server-verified game flow.
+- [x] Reconcile Supabase setup documentation with server-verified game flow.
 - [ ] Record current environment variables and deployment procedure without exposing secrets.
 - [ ] Confirm the actual deployed migration/function versions before any backend work.
 
