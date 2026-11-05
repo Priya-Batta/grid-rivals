@@ -133,7 +133,7 @@ function testRunOwnershipAndLifecycle() {
   expectCode(() => verifyGameTranscript({ ...run, consumed_at: now.toISOString() }, userId, hardWinMoves, now), "consumed-run", "consumed run");
   expectCode(() => verifyGameTranscript({ ...run, expires_at: now.toISOString() }, userId, hardWinMoves, now), "expired-run", "expired run");
   expectCode(() => verifyGameTranscript({ ...run, started_at: new Date(now.getTime() + 1).toISOString() }, userId, hardWinMoves, now), "expired-run", "future-start run");
-  expectCode(() => verifyGameTranscript({ ...run, rules_version: 2 }, userId, hardWinMoves, now), "unsupported-version", "unsupported rules version");
+  expectCode(() => verifyGameTranscript({ ...run, rules_version: 3 }, userId, hardWinMoves, now), "unsupported-version", "unsupported rules version");
   expectCode(() => verifyGameTranscript({ ...run, rng_version: 2 }, userId, hardWinMoves, now), "unsupported-version", "unsupported RNG version");
 }
 
