@@ -183,15 +183,15 @@ class GameScene extends Phaser.Scene {
       this.add.text(280, 200 + index * 65, stat, {
         fontSize: "19px",
         color: "#15803d",
-        backgroundColor: "#172033",
+        backgroundColor: "#ffffff",
         padding: { x: 20, y: 12 }
       }).setOrigin(0.5);
     });
 
     const backButton = this.add.text(280, 620, "BACK TO MENU", {
       fontSize: "17px",
-      color: "#1e293b",
-      backgroundColor: "#2563eb",
+      color: "#ffffff",
+      backgroundColor: "#4f46e5",
       padding: { x: 22, y: 13 }
     })
       .setOrigin(0.5)
@@ -235,7 +235,7 @@ class GameScene extends Phaser.Scene {
 
     const modeColors = [
       { normal: 0xdcfce7, hover: 0xbbf7d0 },
-      { normal: 0x1e40af, hover: 0x4f46e5 },
+      { normal: 0xdbeafe, hover: 0xbfdbfe },
       { normal: 0xffedd5, hover: 0xfed7aa }
     ];
 
@@ -363,7 +363,7 @@ class GameScene extends Phaser.Scene {
         fontFamily: "Arial, Helvetica, sans-serif",
         fontSize: "15px",
         color: "#1e293b",
-        backgroundColor: "#334155",
+        backgroundColor: "#e0e7ff",
         padding: { x: 22, y: 14 }
       }
     )
@@ -371,11 +371,11 @@ class GameScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     soundButton.on("pointerover", () => {
-      soundButton.setBackgroundColor("#475569");
+      soundButton.setBackgroundColor("#c7d2fe");
     });
 
     soundButton.on("pointerout", () => {
-      soundButton.setBackgroundColor("#334155");
+      soundButton.setBackgroundColor("#e0e7ff");
     });
 
     soundButton.on("pointerdown", () => {
