@@ -12,7 +12,7 @@ begin
   v_definition := pg_catalog.pg_get_functiondef(
     'public.create_grid_rivals_game_run(uuid,text,text,bigint)'::regprocedure
   );
-  if pg_catalog.position(E'    v_seed,\n    1,\n    1,\n    v_daily_date,' in v_definition) = 0 then
+  if pg_catalog.strpos(E'    v_seed,\n    1,\n    1,\n    v_daily_date,' in v_definition) = 0 then
     raise exception 'Could not locate game-run rules version in create_grid_rivals_game_run';
   end if;
   v_updated := pg_catalog.replace(
@@ -26,7 +26,7 @@ begin
     'public.finalize_grid_rivals_run(uuid,integer,text,integer,integer,integer)'::regprocedure
   );
 
-  if pg_catalog.position(
+  if pg_catalog.strpos(
     'if v_run.rules_version <> 1 or v_run.rng_version <> 1 then',
     v_definition
   ) = 0 then
@@ -38,7 +38,7 @@ begin
     'if v_run.rules_version <> 2 or v_run.rng_version <> 1 then'
   );
 
-  if pg_catalog.position(
+  if pg_catalog.strpos(
     'v_max_score := (200 - 10) + (v_max_tile_value * 10);',
     v_definition
   ) = 0 then
@@ -50,20 +50,20 @@ begin
     'v_max_score := (case v_run.difficulty when ''easy'' then 18 when ''medium'' then 12 when ''hard'' then 8 end) * v_max_tile_value * 10;'
   );
 
-  if pg_catalog.position(
-    E"or (p_score >= 200 and p_final_status <> 'won')\n    or (p_score < 200 and (p_moves_remaining <> 0 or p_final_status <> 'lost'))",
+  if pg_catalog.strpos(
+    E'or (p_score >= 200 and p_final_status <> ''won'')\n    or (p_score < 200 and (p_moves_remaining <> 0 or p_final_status <> 'lost'')),
     v_definition
   ) = 0 then
     raise exception 'Could not locate terminal-result validation in finalize_grid_rivals_run';
   end if;
   v_definition := pg_catalog.replace(
     v_definition,
-    E"or (p_score >= 200 and p_final_status <> 'won')\n    or (p_score < 200 and (p_moves_remaining <> 0 or p_final_status <> 'lost'))",
-    E"or p_moves_remaining <> 0\n    or (p_score >= 200 and p_final_status <> 'won')\n    or (p_score < 200 and p_final_status <> 'lost')"
+    E'or (p_score >= 200 and p_final_status <> ''won'')\n    or (p_score < 200 and (p_moves_remaining <> 0 or p_final_status <> 'lost'')),
+    E'or p_moves_remaining <> 0\n    or (p_score >= 200 and p_final_status <> ''won'')\n    or (p_score < 200 and p_final_status <> ''lost'')"
   );
 
   -- The old unused-moves achievement is now awarded for a win after all moves.
-  if pg_catalog.position(
+  if pg_catalog.strpos(
     'p_final_status = ''won'' and p_moves_remaining > 0',
     v_definition
   ) = 0 then
