@@ -118,7 +118,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private renderPath(pathname: string) {
-    const path = pathname.replace(/\\/+$/, "") || "/";
+    const path = pathname.replace(/\/+$/, "") || "/";
     switch (path) {
       case "/":
         this.showMenu();
