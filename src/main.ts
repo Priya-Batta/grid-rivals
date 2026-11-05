@@ -14,6 +14,7 @@ import {
   WIN_SCORE
 } from "../supabase/functions/_shared/grid-rivals-rules.ts";
 import { LeaderboardView } from "./leaderboard-ui";
+import { renderAchievementsScreen, renderStatisticsScreen } from "./screens/player-screens";
 import {
   refreshLeaderboardData,
   startVerifiedGame,
@@ -22,9 +23,7 @@ import {
   type StartedGameRun
 } from "./leaderboard";
 import {
-  ACHIEVEMENTS,
   achievementById,
-  achievementProgress,
   levelProgress,
   loadProfile,
   recordGameCompletion,
@@ -207,47 +206,7 @@ class GameScene extends Phaser.Scene {
     this.navigationVersion += 1;
     this.syncPath("/statistics");
     this.clearScreen();
-
-    this.add.text(280, 100, "PLAYER STATISTICS", {
-      fontSize: "28px",
-      color: "#1e293b",
-      fontStyle: "bold"
-    }).setOrigin(0.5);
-
-    const easyBest = localStorage.getItem("grid-rivals-best-Easy") || "0";
-    const mediumBest = localStorage.getItem("grid-rivals-best-Medium") || "0";
-    const hardBest = localStorage.getItem("grid-rivals-best-Hard") || "0";
-
-    const dailyTotal = localStorage.getItem("grid-rivals-daily-total") || "0";
-    const streak = localStorage.getItem("grid-rivals-daily-streak") || "0";
-
-    const stats = [
-      `EASY BEST: ${easyBest}`,
-      `MEDIUM BEST: ${mediumBest}`,
-      `HARD BEST: ${hardBest}`,
-      `DAILY COMPLETED: ${dailyTotal}`,
-      `CURRENT STREAK: ${streak} DAYS`
-    ];
-
-    stats.forEach((stat, index) => {
-      this.add.text(280, 200 + index * 65, stat, {
-        fontSize: "21px",
-        color: "#15803d",
-        backgroundColor: "#ffffff",
-        padding: { x: 20, y: 12 }
-      }).setOrigin(0.5);
-    });
-
-    const backButton = this.add.text(280, 620, "BACK TO MENU", {
-      fontSize: "19px",
-      color: "#ffffff",
-      backgroundColor: "#4f46e5",
-      padding: { x: 22, y: 13 }
-    })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-
-    backButton.on("pointerdown", () => this.showMenu());
+    renderStatisticsScreen(this, () => this.showMenu());
   }
 
   private showMenu() {
@@ -1014,123 +973,7 @@ class GameScene extends Phaser.Scene {
     this.navigationVersion += 1;
     this.syncPath("/achievements");
     this.clearScreen();
-
-    const font = "Arial, Helvetica, sans-serif";
-    const progress = levelProgress(this.profile.xp);
-
-    this.add.rectangle(280, 460, 520, 880, 0xf5f7ff)
-      .setStrokeStyle(2, 0xdbe3f3);
-
-    this.add.text(280, 42, "ACHIEVEMENTS", {
-      fontFamily: font,
-      fontSize: "28px",
-      color: "#1e293b",
-      fontStyle: "bold"
-    }).setOrigin(0.5);
-
-    this.add.text(280, 72, `LEVEL ${progress.level}  •  ${this.profile.xp} XP`, {
-      fontFamily: font,
-      fontSize: "15px",
-      color: "#d97706",
-      fontStyle: "bold"
-    }).setOrigin(0.5);
-
-    const barWidth = 280;
-    this.add.rectangle(280, 96, barWidth, 12, 0xdbe3f3).setStrokeStyle(1, 0xe2e8f0);
-    const fill = Math.max(0, Math.min(barWidth, (progress.current / progress.needed) * barWidth));
-    if (fill > 0) {
-      this.add.rectangle(280 - barWidth / 2 + fill / 2, 96, fill, 8, 0x0ea5e9);
-    }
-    this.add.text(280, 114, `${progress.current} / ${progress.needed} TO NEXT LEVEL`, {
-      fontFamily: font,
-      fontSize: "13px",
-      color: "#64748b"
-    }).setOrigin(0.5);
-
-    const cardH = 84;
-    const gap = 4;
-    const listTop = 136;
-
-    ACHIEVEMENTS.forEach((achievement, index) => {
-      const y = listTop + index * (cardH + gap) + cardH / 2;
-      const unlocked = Boolean(this.profile.unlocked[achievement.id]);
-      const current = achievementProgress(this.profile, achievement.id);
-      const ratio = achievement.goal === 0 ? 1 : current / achievement.goal;
-
-      this.add.rectangle(280, y, 492, cardH, unlocked ? 0xdcfce7 : 0xeaf0ff)
-        .setStrokeStyle(2, unlocked ? 0x6ee7b7 : 0xe2e8f0);
-
-      this.add.text(50, y - 26, achievement.name.toUpperCase(), {
-        fontFamily: font,
-        fontSize: "16px",
-        color: unlocked ? "#166534" : "#475569",
-        fontStyle: "bold"
-      }).setOrigin(0, 0.5);
-
-      this.add.text(510, y - 26, `+${achievement.xp} XP`, {
-        fontFamily: font,
-        fontSize: "14px",
-        color: "#d97706",
-        fontStyle: "bold"
-      }).setOrigin(1, 0.5);
-
-      this.add.text(50, y - 6, achievement.description, {
-        fontFamily: font,
-        fontSize: "14px",
-        color: "#64748b"
-      }).setOrigin(0, 0.5);
-
-      const trackX = 250;
-      const trackW = 110;
-      this.add.rectangle(trackX, y + 20, trackW, 8, 0xdbe3f3);
-      const progressWidth = Math.max(0, Math.min(trackW, ratio * trackW));
-      if (progressWidth > 0) {
-        this.add.rectangle(
-          trackX - trackW / 2 + progressWidth / 2,
-          y + 20,
-          progressWidth,
-          6,
-          unlocked ? 0x4ade80 : 0x38bdf8
-        );
-      }
-
-      this.add.text(314, y + 20, `${current}/${achievement.goal}`, {
-        fontFamily: font,
-        fontSize: "14px",
-        color: "#334155"
-      }).setOrigin(0, 0.5);
-
-      const date = unlocked
-        ? (this.profile.unlocked[achievement.id] || "").slice(0, 10)
-        : "LOCKED";
-      this.add.text(50, y + 20, date, {
-        fontFamily: font,
-        fontSize: "14px",
-        color: unlocked ? "#047857" : "#64748b",
-        fontStyle: "bold"
-      }).setOrigin(0, 0.5);
-
-      this.add.text(510, y + 20, unlocked ? "UNLOCKED" : "", {
-        fontFamily: font,
-        fontSize: "14px",
-        color: "#15803d",
-        fontStyle: "bold"
-      }).setOrigin(1, 0.5);
-    });
-
-    const back = this.add.text(280, 878, "BACK TO MENU", {
-      fontFamily: font,
-      fontSize: "18px",
-      color: "#1e293b",
-      backgroundColor: "#2563eb",
-      padding: { x: 18, y: 10 }
-    })
-      .setOrigin(0.5)
-      .setInteractive({ useHandCursor: true });
-
-    back.on("pointerdown", () => this.showMenu());
-    back.on("pointerover", () => back.setBackgroundColor("#3b82f6"));
-    back.on("pointerout", () => back.setBackgroundColor("#2563eb"));
+    renderAchievementsScreen(this, this.profile, () => this.showMenu());
   }
 
   private presentUnlocks(ids: AchievementId[]) {
