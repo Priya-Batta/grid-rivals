@@ -5,7 +5,6 @@ import {
   loadProfile,
   recordGameCompletion,
   recordTileClaim,
-  achievementById,
   type Profile
 } from "./achievements.ts";
 
@@ -128,13 +127,13 @@ assert(
 );
 
 assert(
-  secondWin.unlocks.includes("champion"),
-  "240 points unlocks Champion"
+  !secondWin.unlocks.includes("champion"),
+  "an already unlocked Champion reward is not repeated"
 );
 
 assert(
-  profile.xp === before + gameRewardXp(320, false) + achievementById("champion").xp,
-  "only the new Champion reward and game XP are awarded"
+  profile.xp === before + gameRewardXp(320, false),
+  "only the new game XP is awarded"
 );
 }
 
