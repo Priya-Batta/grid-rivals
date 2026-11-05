@@ -145,14 +145,23 @@ function testWinConditions() {
   let state = stateWithUniformBoard(createStandardGameConfig("Easy", 3), 3);
   for (const position of longPath.slice(0, 7)) {
     const result = applyMove(state, position);
-    assert(result.accepted, "winning transcript move is legal");
+    assert(result.accepted, "target-reaching transcript move is legal");
     state = result.state;
   }
   assert(state.score === 210, "score reaches the 200-point target");
-  assert(state.movesRemaining === 11, "winning game retains moves");
-  assert(state.status === "won", "reaching target wins immediately");
-  assert(determineGameCompletion(200, 11) === "won", "target takes precedence with moves remaining");
-  assert(determineGameCompletion(200, 0) === "won", "target takes precedence on the last move");
+  assert(state.movesRemaining === 11, "moves remain after reaching the target");
+  assert(state.status === "playing", "game continues after reaching the target");
+  assert(isValidMove(state, longPath[7]), "player can make another move after reaching the target");
+
+  for (const position of longPath.slice(7)) {
+    const result = applyMove(state, position);
+    assert(result.accepted, "remaining move is accepted after reaching the target");
+    state = result.state;
+  }
+  assert(state.movesRemaining === 0, "game uses all 18 Easy moves");
+  assert(state.status === "won", "reaching the target by the final move wins");
+  assert(determineGameCompletion(200, 11) === "playing", "target does not end a game with moves remaining");
+  assert(determineGameCompletion(200, 0) === "won", "target score wins when all moves are used");
   assert(determineGameCompletion(190, 0) === "lost", "zero moves below target ends the game");
   assert(determineGameCompletion(190, 1) === "playing", "game continues below target with moves left");
 }
