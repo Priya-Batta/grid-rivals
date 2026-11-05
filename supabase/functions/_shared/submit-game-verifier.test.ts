@@ -57,9 +57,30 @@ function makeRun(
   };
 }
 
-const hardWinMoves: Position[] = [
-  { x: 5, y: 4 }, { x: 5, y: 3 }, { x: 6, y: 3 }, { x: 5, y: 2 }, { x: 7, y: 3 }
-];
+function greedyTranscript(config: GameConfig, highestFirst = false): Position[] {
+  let state = createGameState(config);
+  const moves: Position[] = [];
+  while (state.status === "playing") {
+    const candidates: Array<Position & { tileValue: number }> = [];
+    for (let y = 0; y < 8; y += 1) {
+      for (let x = 0; x < 8; x += 1) {
+        if (isValidMove(state, { x, y })) candidates.push({ x, y, tileValue: state.board[y][x] });
+      }
+    }
+    candidates.sort((a, b) =>
+      (highestFirst ? b.tileValue - a.tileValue : a.tileValue - b.tileValue) ||
+      a.y - b.y || a.x - b.x
+    );
+    const next = candidates[0];
+    assert(Boolean(next), "a legal move exists until all moves are used");
+    const position = { x: next.x, y: next.y };
+    moves.push(position);
+    state = applyMove(state, position).state;
+  }
+  return moves;
+}
+
+const hardWinMoves: Position[] = greedyTranscript(createStandardGameConfig("Hard", 1), true);
 
 const easyLossMoves: Position[] = [
   { x: 4, y: 3 }, { x: 4, y: 2 }, { x: 3, y: 2 }, { x: 2, y: 2 },
@@ -72,9 +93,9 @@ const easyLossMoves: Position[] = [
 function testValidWinAndLoss() {
   const hard = createStandardGameConfig("Hard", 1);
   const win = verifyGameTranscript(makeRun(hard), userId, hardWinMoves, now);
-  assert(win.score === 210, "win score is replayed from tiles");
-  assert(win.status === "won" && win.movesRemaining === 3, "win status and remaining moves are replayed");
-  assert(win.movesPlayed === 5 && win.tilesClaimed === 5, "win move and tile counts are derived");
+  assert(win.score >= 200, "win score reaches the target after using all moves");
+  assert(win.status === "won" && win.movesRemaining === 0, "win is recorded only after all moves are used");
+  assert(win.movesPlayed === 8 && win.tilesClaimed === 8, "win move and tile counts are derived");
 
   const easy = createStandardGameConfig("Easy", 3);
   const loss = verifyGameTranscript(makeRun(easy), userId, easyLossMoves, now);
