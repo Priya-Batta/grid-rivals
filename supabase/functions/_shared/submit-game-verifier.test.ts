@@ -187,8 +187,8 @@ function testServerDerivedScoreAndImpossibleTranscript() {
   assert(result.score >= 200 && result.score <= 400, "score is canonical replay output under SQL ceiling");
   expectCode(
     () => verifyGameTranscript(run, userId, [...hardWinMoves, { x: 1, y: 1 }], now),
-    "illegal-move",
-    "impossible extra result move"
+    "invalid-transcript",
+    "extra move beyond the difficulty move limit"
   );
 }
 
