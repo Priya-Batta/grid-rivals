@@ -197,6 +197,11 @@ export async function handler(request: Request): Promise<Response> {
   if (request.method !== "POST") {
     return jsonResponse(request, 405, { error: "Use POST to start a game." });
   }
+  if (Deno.env.get("GRID_RIVALS_STARTS_PAUSED") === "true") {
+    return jsonResponse(request, 503, {
+      error: "New games are temporarily paused. Please try again shortly."
+    });
+  }
   const contentType = request.headers.get("content-type")?.split(";", 1)[0].trim().toLowerCase();
   if (contentType !== "application/json") {
     return jsonResponse(request, 415, { error: "Content-Type must be application/json." });

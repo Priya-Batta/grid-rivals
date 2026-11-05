@@ -1,4 +1,4 @@
-export const RULES_VERSION = 1 as const;
+export const RULES_VERSION = 2 as const;
 export const RNG_VERSION = 1 as const;
 export const GRID_SIZE = 8;
 export const WIN_SCORE = 200;
@@ -193,8 +193,8 @@ export function calculateTileScore(tileValue: number): number {
 }
 
 export function maxFinalScore(difficulty: Difficulty): number {
-  const { maxTileValue } = DIFFICULTY_RULES[difficulty];
-  return WIN_SCORE - 10 + calculateTileScore(maxTileValue);
+  const { maxTileValue, moves } = DIFFICULTY_RULES[difficulty];
+  return moves * calculateTileScore(maxTileValue);
 }
 
 export function maxMovesForDifficulty(difficulty: Difficulty): number {
@@ -202,9 +202,8 @@ export function maxMovesForDifficulty(difficulty: Difficulty): number {
 }
 
 export function determineGameCompletion(score: number, movesRemaining: number): GameStatus {
-  if (score >= WIN_SCORE) return "won";
-  if (movesRemaining <= 0) return "lost";
-  return "playing";
+  if (movesRemaining > 0) return "playing";
+  return score >= WIN_SCORE ? "won" : "lost";
 }
 
 export function applyMove(state: GameState, position: Position): AppliedMove {
