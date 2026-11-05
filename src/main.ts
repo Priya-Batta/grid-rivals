@@ -159,7 +159,7 @@ class GameScene extends Phaser.Scene {
     this.clearScreen();
 
     this.add.text(280, 100, "PLAYER STATISTICS", {
-      fontSize: "26px",
+      fontSize: "28px",
       color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
@@ -181,7 +181,7 @@ class GameScene extends Phaser.Scene {
 
     stats.forEach((stat, index) => {
       this.add.text(280, 200 + index * 65, stat, {
-        fontSize: "19px",
+        fontSize: "21px",
         color: "#15803d",
         backgroundColor: "#ffffff",
         padding: { x: 20, y: 12 }
@@ -189,7 +189,7 @@ class GameScene extends Phaser.Scene {
     });
 
     const backButton = this.add.text(280, 620, "BACK TO MENU", {
-      fontSize: "17px",
+      fontSize: "19px",
       color: "#ffffff",
       backgroundColor: "#4f46e5",
       padding: { x: 22, y: 13 }
@@ -213,19 +213,19 @@ class GameScene extends Phaser.Scene {
 
     // Game title
     this.add.text(280, 95, "GRID RIVALS", {
-      fontSize: "40px",
+      fontSize: "42px",
       color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
     this.add.text(280, 145, "CONQUER THE GRID", {
-      fontSize: "13px",
+      fontSize: "15px",
       color: "#0284c7",
       letterSpacing: 4
     }).setOrigin(0.5);
 
     this.add.text(280, 268, "CHOOSE YOUR GAME", {
-      fontSize: "18px",
+      fontSize: "20px",
       color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
@@ -250,7 +250,7 @@ class GameScene extends Phaser.Scene {
         .setInteractive({ useHandCursor: true });
 
       this.add.text(280, y, mode.toUpperCase(), {
-        fontSize: "19px",
+        fontSize: "21px",
         color: "#1e293b",
         fontStyle: "bold"
       }).setOrigin(0.5);
@@ -278,7 +278,7 @@ class GameScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     this.add.text(280, 580, "★  DAILY CHALLENGE", {
-      fontSize: "18px",
+      fontSize: "20px",
       color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
@@ -303,7 +303,7 @@ class GameScene extends Phaser.Scene {
       .setInteractive({ useHandCursor: true });
 
     this.add.text(280, 656, "PLAYER STATISTICS", {
-      fontSize: "16px",
+      fontSize: "18px",
       color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
@@ -328,7 +328,7 @@ class GameScene extends Phaser.Scene {
 
     this.add.text(280, 724, "ACHIEVEMENTS", {
       fontFamily: "Arial, Helvetica, sans-serif",
-      fontSize: "16px",
+      fontSize: "18px",
       color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
@@ -345,7 +345,7 @@ class GameScene extends Phaser.Scene {
 
     this.add.text(280, 780, "GLOBAL LEADERBOARD", {
       fontFamily: "Arial, Helvetica, sans-serif",
-      fontSize: "16px",
+      fontSize: "18px",
       color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
@@ -361,7 +361,7 @@ class GameScene extends Phaser.Scene {
       this.soundEnabled ? "SOUND: ON" : "SOUND: OFF",
       {
         fontFamily: "Arial, Helvetica, sans-serif",
-        fontSize: "15px",
+        fontSize: "17px",
         color: "#1e293b",
         backgroundColor: "#e0e7ff",
         padding: { x: 22, y: 14 }
@@ -393,7 +393,7 @@ class GameScene extends Phaser.Scene {
 
     // Footer
     this.add.text(280, 894, "CAPTURE  •  EXPAND  •  CONQUER", {
-      fontSize: "12px",
+      fontSize: "14px",
       color: "#64748b",
       letterSpacing: 2
     }).setOrigin(0.5);
@@ -406,7 +406,7 @@ class GameScene extends Phaser.Scene {
     this.add.rectangle(280, 460, 520, 880, 0xf5f7ff).setStrokeStyle(2, 0xdbe3f3);
     this.add.text(280, 440, "STARTING VERIFIED RUN...", {
       fontFamily: "Arial, Helvetica, sans-serif",
-      fontSize: "16px",
+      fontSize: "18px",
       color: "#0284c7",
       fontStyle: "bold"
     }).setOrigin(0.5);
@@ -440,7 +440,7 @@ class GameScene extends Phaser.Scene {
 
     this.add.text(cx, 168, "GRID RIVALS", {
       fontFamily: "Arial, Helvetica, sans-serif",
-      fontSize: "34px",
+      fontSize: "36px",
       color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
@@ -453,7 +453,7 @@ class GameScene extends Phaser.Scene {
         : "PRACTICE MODE · NOT VERIFIED",
       {
         fontFamily: "Arial, Helvetica, sans-serif",
-        fontSize: "13px",
+        fontSize: "15px",
         color: "#15803d",
         letterSpacing: 2
       }
@@ -461,14 +461,14 @@ class GameScene extends Phaser.Scene {
 
     this.scoreText = this.add.text(this.startX + 16, hudY, "SCORE: 0", {
       fontFamily: "Arial, Helvetica, sans-serif",
-      fontSize: "16px",
+      fontSize: "18px",
       color: "#4f46e5",
       fontStyle: "bold"
     }).setOrigin(0, 0.5);
 
     this.movesText = this.add.text(cx, hudY, `MOVES: ${this.moves}`, {
       fontFamily: "Arial, Helvetica, sans-serif",
-      fontSize: "16px",
+      fontSize: "18px",
       color: "#d97706",
       fontStyle: "bold"
     }).setOrigin(0.5);
@@ -479,7 +479,7 @@ class GameScene extends Phaser.Scene {
 
     const homeLabel = this.add.text(78, 96, "← HOME", {
       fontFamily: "Arial, Helvetica, sans-serif",
-      fontSize: "15px",
+      fontSize: "17px",
       color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
@@ -498,7 +498,7 @@ class GameScene extends Phaser.Scene {
 
     this.bestText = this.add.text(this.startX + hudW - 16, hudY, `BEST: ${best}`, {
       fontFamily: "Arial, Helvetica, sans-serif",
-      fontSize: "15px",
+      fontSize: "17px",
       color: "#15803d",
       fontStyle: "bold"
     }).setOrigin(1, 0.5);
@@ -507,7 +507,7 @@ class GameScene extends Phaser.Scene {
       ? `REACH ${WIN_SCORE} TO WIN  •  CAPTURE ADJACENT CELLS`
       : "LOCAL PRACTICE · SCORE NOT SUBMITTED", {
       fontFamily: "Arial, Helvetica, sans-serif",
-      fontSize: "12px",
+      fontSize: "14px",
       color: "#64748b"
     }).setOrigin(0.5);
 
@@ -620,7 +620,7 @@ class GameScene extends Phaser.Scene {
       tile.rect.y - 10,
       `+${pointsEarned}`,
       {
-        fontSize: "23px",
+        fontSize: "24px",
         color: "#15803d",
         fontStyle: "bold",
         stroke: "#f5f7ff",
@@ -756,7 +756,7 @@ class GameScene extends Phaser.Scene {
       this.currentGameRun ? "VERIFYING MOVE TRANSCRIPT..." : "PRACTICE SCORE · NOT VERIFIED",
       {
         fontFamily: "Arial, Helvetica, sans-serif",
-        fontSize: "10px",
+        fontSize: "13px",
         color: "#d97706",
         fontStyle: "bold"
       }
@@ -765,7 +765,7 @@ class GameScene extends Phaser.Scene {
 
     this.finalScoreText = this.add.text(cx, top + 108, `FINAL SCORE: ${this.score}`, {
       fontFamily: "Arial, Helvetica, sans-serif",
-      fontSize: "22px",
+      fontSize: "23px",
       color: "#15803d",
       fontStyle: "bold"
     }).setOrigin(0.5).setDepth(32);
@@ -776,7 +776,7 @@ class GameScene extends Phaser.Scene {
       `${this.isDailyChallenge ? "TODAY'S BEST" : "PERSONAL BEST"}: ${best}`,
       {
         fontFamily: "Arial, Helvetica, sans-serif",
-        fontSize: "15px",
+        fontSize: "17px",
         color: "#64748b"
       }
     ).setOrigin(0.5).setDepth(32);
@@ -788,7 +788,7 @@ class GameScene extends Phaser.Scene {
         `DAILY STREAK: ${this.dailyStreak} DAYS`,
         {
           fontFamily: "Arial, Helvetica, sans-serif",
-          fontSize: "16px",
+          fontSize: "18px",
           color: "#d97706",
           fontStyle: "bold"
         }
@@ -802,7 +802,7 @@ class GameScene extends Phaser.Scene {
       this.currentGameRun ? "SERVER PROGRESSION PENDING" : `LOCAL +${reward.gameXp} XP  •  LEVEL ${progress.level}`,
       {
         fontFamily: "Arial, Helvetica, sans-serif",
-        fontSize: "15px",
+        fontSize: "17px",
         color: "#d97706",
         fontStyle: "bold"
       }
@@ -847,7 +847,7 @@ class GameScene extends Phaser.Scene {
       this.isDailyChallenge ? "BACK TO MAIN MENU" : "CHANGE DIFFICULTY",
       {
         fontFamily: "Arial, Helvetica, sans-serif",
-        fontSize: "16px",
+        fontSize: "18px",
         color: "#4f46e5",
         fontStyle: "bold"
       }
@@ -866,7 +866,7 @@ class GameScene extends Phaser.Scene {
 
     this.add.text(x, y - 16, `LEVEL ${progress.level}`, {
       fontFamily: font,
-      fontSize: "13px",
+      fontSize: "15px",
       color: "#d97706",
       fontStyle: "bold"
     }).setOrigin(0.5);
@@ -884,7 +884,7 @@ class GameScene extends Phaser.Scene {
 
     this.add.text(x, y + 24, `${progress.current} / ${progress.needed} XP`, {
       fontFamily: font,
-      fontSize: "11px",
+      fontSize: "14px",
       color: "#64748b"
     }).setOrigin(0.5);
   }
@@ -956,14 +956,14 @@ class GameScene extends Phaser.Scene {
 
     this.add.text(280, 42, "ACHIEVEMENTS", {
       fontFamily: font,
-      fontSize: "26px",
+      fontSize: "28px",
       color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5);
 
     this.add.text(280, 72, `LEVEL ${progress.level}  •  ${this.profile.xp} XP`, {
       fontFamily: font,
-      fontSize: "13px",
+      fontSize: "15px",
       color: "#d97706",
       fontStyle: "bold"
     }).setOrigin(0.5);
@@ -976,7 +976,7 @@ class GameScene extends Phaser.Scene {
     }
     this.add.text(280, 114, `${progress.current} / ${progress.needed} TO NEXT LEVEL`, {
       fontFamily: font,
-      fontSize: "10px",
+      fontSize: "13px",
       color: "#64748b"
     }).setOrigin(0.5);
 
@@ -995,21 +995,21 @@ class GameScene extends Phaser.Scene {
 
       this.add.text(50, y - 26, achievement.name.toUpperCase(), {
         fontFamily: font,
-        fontSize: "14px",
+        fontSize: "16px",
         color: unlocked ? "#1e293b" : "#475569",
         fontStyle: "bold"
       }).setOrigin(0, 0.5);
 
       this.add.text(510, y - 26, `+${achievement.xp} XP`, {
         fontFamily: font,
-        fontSize: "12px",
+        fontSize: "14px",
         color: "#d97706",
         fontStyle: "bold"
       }).setOrigin(1, 0.5);
 
       this.add.text(50, y - 6, achievement.description, {
         fontFamily: font,
-        fontSize: "11px",
+        fontSize: "14px",
         color: "#64748b"
       }).setOrigin(0, 0.5);
 
@@ -1029,7 +1029,7 @@ class GameScene extends Phaser.Scene {
 
       this.add.text(314, y + 20, `${current}/${achievement.goal}`, {
         fontFamily: font,
-        fontSize: "11px",
+        fontSize: "14px",
         color: "#334155"
       }).setOrigin(0, 0.5);
 
@@ -1038,14 +1038,14 @@ class GameScene extends Phaser.Scene {
         : "LOCKED";
       this.add.text(50, y + 20, date, {
         fontFamily: font,
-        fontSize: "11px",
+        fontSize: "14px",
         color: unlocked ? "#047857" : "#64748b",
         fontStyle: "bold"
       }).setOrigin(0, 0.5);
 
       this.add.text(510, y + 20, unlocked ? "UNLOCKED" : "", {
         fontFamily: font,
-        fontSize: "11px",
+        fontSize: "14px",
         color: "#15803d",
         fontStyle: "bold"
       }).setOrigin(1, 0.5);
@@ -1053,7 +1053,7 @@ class GameScene extends Phaser.Scene {
 
     const back = this.add.text(280, 878, "BACK TO MENU", {
       fontFamily: font,
-      fontSize: "16px",
+      fontSize: "18px",
       color: "#1e293b",
       backgroundColor: "#2563eb",
       padding: { x: 18, y: 10 }
@@ -1091,19 +1091,19 @@ class GameScene extends Phaser.Scene {
       .setAlpha(0);
     const title = this.add.text(280, 100, "ACHIEVEMENT UNLOCKED", {
       fontFamily: font,
-      fontSize: "12px",
+      fontSize: "14px",
       color: "#d97706",
       fontStyle: "bold"
     }).setOrigin(0.5).setDepth(61).setAlpha(0);
     const name = this.add.text(280, 124, achievement.name.toUpperCase(), {
       fontFamily: font,
-      fontSize: "18px",
+      fontSize: "20px",
       color: "#1e293b",
       fontStyle: "bold"
     }).setOrigin(0.5).setDepth(61).setAlpha(0);
     const reward = this.add.text(280, 146, `+${achievement.xp} XP`, {
       fontFamily: font,
-      fontSize: "14px",
+      fontSize: "16px",
       color: "#15803d",
       fontStyle: "bold"
     }).setOrigin(0.5).setDepth(61).setAlpha(0);
@@ -1190,6 +1190,8 @@ new Phaser.Game({
   height: 920,
   parent: "app",
   backgroundColor: "#f5f7ff",
+  resolution: Math.min(window.devicePixelRatio || 1, 2),
+  render: { antialias: true, roundPixels: false },
   scene: [GameScene],
   scale: {
     mode: Phaser.Scale.FIT,
