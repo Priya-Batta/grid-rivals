@@ -77,7 +77,7 @@ begin
   v_definition := pg_catalog.replace(
     v_definition,
     $old$p_final_status = 'won' and p_moves_remaining > 0$old$,
-    $new$p_final_status = 'won' and p_moves_remaining = 0$new$
+    $new$p_final_status = 'won' and p_moves_remaining = 0 and p_score >= 300$new$
   );
 
   execute v_definition;
