@@ -1,7 +1,25 @@
 begin;
 
+-- Serialize run creation while checking for active v1 games and switching the
+-- database functions to rules version 2.
+lock table public.grid_rivals_game_runs in share row exclusive mode;
+
+do $migration$
+begin
+  if exists (
+    select 1
+    from public.grid_rivals_game_runs as run_row
+    where run_row.rules_version = 1
+      and run_row.consumed_at is null
+      and run_row.expires_at > pg_catalog.clock_timestamp()
+  ) then
+    raise exception
+      'Cannot enable rules version 2 while unexpired version 1 game runs remain. Wait for them to finish or expire, then retry.';
+  end if;
+end;
+$migration$;
+
 -- Version 2 changes completion semantics: every game consumes its full move allowance.
--- Finish any in-progress version 1 games before deploying this migration.
 
 do $migration$
 declare
