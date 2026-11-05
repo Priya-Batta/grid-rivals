@@ -569,11 +569,14 @@ class GameScene extends Phaser.Scene {
           isStart ? "★" : String(value),
           {
             fontFamily: "Arial, Helvetica, sans-serif",
-            fontSize: isStart ? "28px" : "24px",
+            fontSize: isStart ? "30px" : "28px",
             color: "#1e293b",
-            fontStyle: "bold"
+            fontStyle: "bold",
+            stroke: "#ffffff",
+            strokeThickness: 0.6
           }
-        ).setOrigin(0.5);
+        ).setOrigin(0.5)
+          .setResolution(Math.min(window.devicePixelRatio || 1, 3));
 
         const tile: Tile = {
           x, y, value,
