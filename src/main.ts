@@ -572,11 +572,9 @@ class GameScene extends Phaser.Scene {
             fontSize: isStart ? "30px" : "28px",
             color: "#1e293b",
             fontStyle: "bold",
-            stroke: "#ffffff",
-            strokeThickness: 0.6
           }
         ).setOrigin(0.5)
-          .setResolution(Math.min(window.devicePixelRatio || 1, 3));
+          .setResolution(4);
 
         const tile: Tile = {
           x, y, value,
@@ -1213,8 +1211,8 @@ new Phaser.Game({
   height: 920,
   parent: "app",
   backgroundColor: "#f5f7ff",
-  resolution: Math.min(window.devicePixelRatio || 1, 3),
-  render: { antialias: true, roundPixels: false },
+  resolution: Math.min(window.devicePixelRatio || 1, 4),
+  render: { antialias: true, roundPixels: true },
   scene: [GameScene],
   scale: {
     mode: Phaser.Scale.FIT,
