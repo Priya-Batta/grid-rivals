@@ -116,9 +116,9 @@ function testScoringAndMoveLimits() {
   assert(calculateTileScore(1) === 10, "value 1 scores 10");
   assert(calculateTileScore(3) === 30, "value 3 scores 30");
   assert(calculateTileScore(5) === 50, "value 5 scores 50");
-  assert(maxFinalScore("Easy") === 220, "Easy final-score ceiling matches its tile values");
-  assert(maxFinalScore("Medium") === 220, "Medium final-score ceiling matches its tile values");
-  assert(maxFinalScore("Hard") === 240, "Hard final-score ceiling matches its tile values");
+  assert(maxFinalScore("Easy") === 540, "Easy final-score ceiling uses all 18 moves");
+  assert(maxFinalScore("Medium") === 360, "Medium final-score ceiling uses all 12 moves");
+  assert(maxFinalScore("Hard") === 400, "Hard final-score ceiling uses all 8 moves");
 
   const limits = [
     ["Easy", 18], ["Medium", 12], ["Hard", 8]
