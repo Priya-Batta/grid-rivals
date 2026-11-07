@@ -104,7 +104,7 @@ export function levelProgress(xp: number): LevelProgress {
   let rest = Math.max(0, Math.floor(xp));
   let needed = 100;
 
-  while (rest >= needed) {
+  while (level < 10_000 && rest >= needed) {
     rest -= needed;
     level += 1;
     needed = 100 * level;
