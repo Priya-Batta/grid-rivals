@@ -40,7 +40,7 @@ Supabase JS is also configured with `auth.persistSession: true`. The SDK persist
 - The Statistics screen currently reads local bests and Daily counters directly.
 - The menu level bar and Achievements screen use the server-backed `Profile` view model returned by `fetchPlayerProgress()`.
 - `recordDailyCompletion()` updates local Daily counters before the verified submission is known to have succeeded.
-- `grid-rivals-display-name` is written locally for offline use. During profile initialization, a differing cached name can be sent back to Supabase, so a stale local cache can overwrite a newer server-side name.
+- `grid-rivals-display-name` is a local cache for offline use. The server value is canonical during profile initialization; only an explicit display-name edit updates Supabase, after which the cache is refreshed.
 
 ## 3. Server-side data contract
 
@@ -85,9 +85,9 @@ The separate device-local Statistics screen remains a follow-up item; its best s
 
 Local bests and Daily counts may include practice or unverified sessions. They must not be imported as verified scores, XP or server achievement awards. Keep them readable during the transition so existing device history is not silently erased. Decide separately whether they remain labelled local/practice statistics or are retired after a compatibility period.
 
-### P1 — Display-name cache direction
+### Resolved — Display-name cache direction
 
-The server should be canonical. A local cached name should populate the form when offline, but should not automatically overwrite a different server value on profile initialization. Explicit user edits should update the server and then refresh the cache after success; offline edits need a clearly defined pending-sync policy.
+The server is canonical during profile initialization. A cached local name is available for offline use but does not automatically overwrite a different server value. An explicit user edit updates the server, and the local cache is refreshed after success.
 
 ### P1 — Daily streak semantics
 
