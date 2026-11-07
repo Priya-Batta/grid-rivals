@@ -46,6 +46,16 @@ function testRejectsInvalidProgress() {
   assert(rejected, "negative server XP is rejected");
 }
 
+function testRejectsInconsistentLevel() {
+  let rejected = false;
+  try {
+    profileFromServerData({ ...base, total_xp: 0, player_level: 3 }, []);
+  } catch {
+    rejected = true;
+  }
+  assert(rejected, "inconsistent server XP and level are rejected");
+}
+
 function testRejectsUnknownAward() {
   let rejected = false;
   try {
@@ -59,5 +69,6 @@ function testRejectsUnknownAward() {
 testServerProfileMapping();
 testEmptyAwards();
 testRejectsInvalidProgress();
+testRejectsInconsistentLevel();
 testRejectsUnknownAward();
 console.log("player progress tests passed");
