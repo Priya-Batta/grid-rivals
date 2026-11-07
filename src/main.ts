@@ -919,11 +919,11 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  private async refreshServerProfile(): Promise<void> {
+  private async refreshServerProfile(forceRefresh = false): Promise<void> {
     this.progressLoadFailed = false;
     try {
       const previousAwards = new Set(Object.keys(this.profile?.unlocked ?? {}));
-      const snapshot = await fetchPlayerProgress(true);
+      const snapshot = await fetchPlayerProgress(forceRefresh);
       this.profile = snapshot.profile;
       this.progressLoadFailed = false;
       const newlyUnlocked = Object.keys(snapshot.profile.unlocked)
@@ -940,7 +940,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private async refreshAfterVerifiedSubmission(): Promise<void> {
-    await Promise.all([refreshLeaderboardData(), this.refreshServerProfile()]);
+    await Promise.all([refreshLeaderboardData(), this.refreshServerProfile(true)]);
   }
 
   private presentUnlocks(ids: AchievementId[]) {
