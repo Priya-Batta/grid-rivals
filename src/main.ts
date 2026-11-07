@@ -17,6 +17,7 @@ import {
 import { LeaderboardView } from "./leaderboard-ui";
 import { renderAchievementsScreen, renderStatisticsScreen } from "./screens/player-screens";
 import {
+  fetchPlayerProgress,
   refreshLeaderboardData,
   startVerifiedGame,
   submitVerifiedGame,
@@ -26,9 +27,6 @@ import {
 import {
   achievementById,
   levelProgress,
-  loadProfile,
-  recordGameCompletion,
-  recordTileClaim,
   type AchievementId,
   type Profile
 } from "./achievements";
@@ -46,7 +44,8 @@ class GameScene extends Phaser.Scene {
   private isDailyChallenge = false;
   private dailyStreak = 0;
   private soundEnabled = localStorage.getItem("grid-rivals-sound") !== "off";
-  private profile!: Profile;
+  private profile: Profile | null = null;
+  private progressLoadFailed = false;
   private toastQueue: AchievementId[] = [];
   private toastActive = false;
   private toastGeneration = 0;
@@ -96,10 +95,8 @@ class GameScene extends Phaser.Scene {
       this.audioContext = undefined;
     });
 
-    const loaded = loadProfile();
-    this.profile = loaded.profile;
     this.renderPath(window.location.pathname);
-    this.presentUnlocks(loaded.freshUnlocks);
+    void this.refreshServerProfile();
   }
 
   private syncPath(path: string, replace = false) {
@@ -624,8 +621,6 @@ class GameScene extends Phaser.Scene {
     this.scoreText.setText(`SCORE: ${this.score}`);
     this.movesText.setText(`MOVES: ${this.moves}`);
 
-    this.presentUnlocks(recordTileClaim(this.profile, this.score));
-
     // Refresh tile colors
     this.refreshBoard();
 
@@ -665,16 +660,6 @@ class GameScene extends Phaser.Scene {
 
     localStorage.setItem(key, String(best));
     this.bestText.setText(`BEST: ${best}`);
-
-    const reward = recordGameCompletion(
-      this.profile,
-      this.score,
-      this.isDailyChallenge,
-      Number(localStorage.getItem("grid-rivals-daily-total") || 0),
-      Number(localStorage.getItem("grid-rivals-daily-streak") || 0),
-      this.moves
-    );
-    this.presentUnlocks(reward.unlocks);
 
     const cx = this.viewW / 2;
     const cy = this.viewH / 2;
@@ -753,11 +738,10 @@ class GameScene extends Phaser.Scene {
       ).setOrigin(0.5).setDepth(32);
     }
 
-    const progress = levelProgress(this.profile.xp);
     this.serverProgressText = this.add.text(
       cx,
       this.isDailyChallenge ? top + 228 : top + 188,
-      this.currentGameRun ? "SERVER PROGRESSION PENDING" : `LOCAL +${reward.gameXp} XP  •  LEVEL ${progress.level}`,
+      this.currentGameRun ? "SERVER PROGRESSION PENDING" : "PRACTICE RUN · NO VERIFIED XP",
       {
         fontFamily: "Arial, Helvetica, sans-serif",
         fontSize: "17px",
@@ -819,6 +803,16 @@ class GameScene extends Phaser.Scene {
   }
 
   private drawLevelBar(x: number, y: number, width: number) {
+    if (!this.profile) {
+      const status = this.add.text(x, y, this.progressLoadFailed
+        ? "PROGRESS UNAVAILABLE · TAP TO RETRY"
+        : "PLAYER PROGRESS SYNCING...", {
+        fontFamily: "Arial, Helvetica, sans-serif", fontSize: "14px", color: "#64748b"
+      }).setOrigin(0.5);
+      status.setInteractive({ useHandCursor: true });
+      status.on("pointerdown", () => void this.refreshServerProfile());
+      return;
+    }
     const progress = levelProgress(this.profile.xp);
     const font = "Arial, Helvetica, sans-serif";
 
@@ -869,7 +863,7 @@ class GameScene extends Phaser.Scene {
       status
         .setText(result.duplicate ? "VERIFIED RESULT ALREADY SAVED" : "GAME VERIFIED AND SAVED")
         .setColor("#15803d");
-      void refreshLeaderboardData();
+      void this.refreshAfterVerifiedSubmission();
     } catch (error) {
       if (!status.active || this.scoreSubmissionText !== status) return;
       this.submissionRetryAvailable = true;
@@ -895,7 +889,7 @@ class GameScene extends Phaser.Scene {
     }
 
     this.leaderboardView = new LeaderboardView(container, {
-      playerLevel: this.profile.level,
+      playerLevel: this.profile?.level ?? 1,
       localBests: {
         easy: Number(localStorage.getItem("grid-rivals-best-Easy") || 0),
         medium: Number(localStorage.getItem("grid-rivals-best-Medium") || 0),
@@ -906,10 +900,47 @@ class GameScene extends Phaser.Scene {
   }
 
   private showAchievements() {
-    this.navigationVersion += 1;
+    const version = ++this.navigationVersion;
     this.syncPath("/achievements");
     this.clearScreen();
-    renderAchievementsScreen(this, this.profile, () => this.showMenu());
+    this.add.text(280, 460, "LOADING VERIFIED ACHIEVEMENTS...", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "17px", color: "#64748b"
+    }).setOrigin(0.5);
+    void this.refreshServerProfile().then(() => {
+      if (version !== this.navigationVersion || window.location.pathname !== "/achievements") return;
+      this.clearScreen();
+      if (this.profile) {
+        renderAchievementsScreen(this, this.profile, () => this.showMenu());
+      } else {
+        this.add.text(280, 460, "PLAYER PROGRESS IS CURRENTLY UNAVAILABLE", {
+          fontFamily: "Arial, Helvetica, sans-serif", fontSize: "16px", color: "#b45309"
+        }).setOrigin(0.5);
+      }
+    });
+  }
+
+  private async refreshServerProfile(forceRefresh = false): Promise<void> {
+    this.progressLoadFailed = false;
+    try {
+      const previousAwards = new Set(Object.keys(this.profile?.unlocked ?? {}));
+      const snapshot = await fetchPlayerProgress(forceRefresh);
+      this.profile = snapshot.profile;
+      this.progressLoadFailed = false;
+      const newlyUnlocked = Object.keys(snapshot.profile.unlocked)
+        .filter((id): id is AchievementId => !previousAwards.has(id as AchievementId));
+      if (previousAwards.size > 0 && newlyUnlocked.length > 0) this.presentUnlocks(newlyUnlocked);
+      if (window.location.pathname === "/" && this.scene.isActive()) {
+        this.showMenu();
+      }
+    } catch (error) {
+      this.progressLoadFailed = true;
+      if (window.location.pathname === "/" && this.scene.isActive()) this.showMenu();
+      console.warn("Could not refresh verified player progress:", error);
+    }
+  }
+
+  private async refreshAfterVerifiedSubmission(): Promise<void> {
+    await Promise.all([refreshLeaderboardData(), this.refreshServerProfile(true)]);
   }
 
   private presentUnlocks(ids: AchievementId[]) {

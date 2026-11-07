@@ -1,4 +1,5 @@
 import {
+  fetchPlayerProgress,
   getStoredDisplayName,
   isLeaderboardConfigured,
   startVerifiedGame,
@@ -29,9 +30,22 @@ async function run() {
   assert(Boolean(validateDisplayName("<script>")), "markup characters rejected");
   assert(Boolean(validateDisplayName("shit player")), "blocked language rejected");
 
-  const savedName = await updatePlayerDisplayName("Nova Rivals");
-  assert(!savedName.synced, "offline name change stays local");
-  assert(getStoredDisplayName() === "Nova Rivals", "display name persists locally");
+  let offlineNameRejected = false;
+  try {
+    await updatePlayerDisplayName("Nova Rivals");
+  } catch (error) {
+    offlineNameRejected = error instanceof Error && error.message.includes("offline");
+  }
+  assert(offlineNameRejected, "offline display-name changes are not treated as saved");
+  assert(getStoredDisplayName() === null, "an unsynced display name is not cached as canonical");
+
+  let progressUnavailable = false;
+  try {
+    await fetchPlayerProgress();
+  } catch (error) {
+    progressUnavailable = error instanceof Error && error.message.includes("not configured");
+  }
+  assert(progressUnavailable, "server progression is unavailable without Supabase config");
 
   let startUnavailable = false;
   try {
