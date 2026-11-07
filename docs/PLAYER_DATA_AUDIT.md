@@ -98,9 +98,19 @@ The server should be canonical. A local cached name should populate the form whe
 The server increments Daily progress only when a verified Daily run is finalized, using the run's UTC date. The local counter is updated when the Daily game ends, regardless of verified submission success. The UI should use server Daily progress for competitive/achievement state.
 
 
-### P0 — Perfect Strategist award condition differs between client and server
+### Resolved — Perfect Strategist award condition
 
-The current client implementation sets `perfectWins` when score is at least 300 and `movesRemaining === 0`, matching the achievement description (“Reach 300 points after using all moves.”). The server finalization SQL currently awards `perfect-strategist` when the game is won and `p_moves_remaining > 0`. These conditions are opposite. Because the server is authoritative, the effective award currently follows the server condition, not the client description. Resolve this as a separately tested rules/award correction before relying on this achievement; do not silently change an already deployed migration.
+The earlier audit finding above was stale: migration `003_full_move_game_completion.sql` already corrects the server-side award condition. It replaces the previous `p_moves_remaining > 0` predicate with:
+
+```sql
+p_final_status = 'won'
+and p_moves_remaining = 0
+and p_score >= 300
+```
+
+This matches the client eligibility rule and the achievement description (“Reach 300 points after using all moves.”). The server remains authoritative for awarding the achievement.
+
+**Status:** Resolved in migration 003; that migration was previously confirmed applied to both staging and production. No additional migration, Edge Function deployment or runtime code change is required for this finding. Do not edit the already-applied migration.
 
 ## 5. Recommended target ownership
 
