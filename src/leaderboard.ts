@@ -325,6 +325,7 @@ export async function fetchPlayerProgress(forceRefresh = false): Promise<PlayerP
     return playerProgressCache.snapshot;
   }
   if (!forceRefresh && playerProgressRequest) return playerProgressRequest;
+  if (forceRefresh) playerProgressCache = null;
 
   const request = (async () => {
     await ensureAnonymousSession();
@@ -344,7 +345,10 @@ export async function fetchPlayerProgress(forceRefresh = false): Promise<PlayerP
       awardsResponse.data as ServerAchievementAward[]
     );
     const snapshot = { profile, fetchedAt: Date.now() };
-    playerProgressCache = { snapshot, expiresAt: Date.now() + CACHE_TTL_MS };
+    // A slower request must not overwrite a newer forced refresh.
+    if (playerProgressRequest === request) {
+      playerProgressCache = { snapshot, expiresAt: Date.now() + CACHE_TTL_MS };
+    }
     return snapshot;
   })();
 
