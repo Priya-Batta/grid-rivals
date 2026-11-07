@@ -45,6 +45,7 @@ class GameScene extends Phaser.Scene {
   private dailyStreak = 0;
   private soundEnabled = localStorage.getItem("grid-rivals-sound") !== "off";
   private profile: Profile | null = null;
+  private progressLoadFailed = false;
   private toastQueue: AchievementId[] = [];
   private toastActive = false;
   private toastGeneration = 0;
@@ -804,9 +805,13 @@ class GameScene extends Phaser.Scene {
 
   private drawLevelBar(x: number, y: number, width: number) {
     if (!this.profile) {
-      this.add.text(x, y, "PLAYER PROGRESS SYNCING...", {
+      const status = this.add.text(x, y, this.progressLoadFailed
+        ? "PROGRESS UNAVAILABLE · TAP TO RETRY"
+        : "PLAYER PROGRESS SYNCING...", {
         fontFamily: "Arial, Helvetica, sans-serif", fontSize: "14px", color: "#64748b"
       }).setOrigin(0.5);
+      status.setInteractive({ useHandCursor: true });
+      status.on("pointerdown", () => void this.refreshServerProfile());
       return;
     }
     const progress = levelProgress(this.profile.xp);
@@ -916,10 +921,12 @@ class GameScene extends Phaser.Scene {
   }
 
   private async refreshServerProfile(): Promise<void> {
+    this.progressLoadFailed = false;
     try {
       const previousAwards = new Set(Object.keys(this.profile?.unlocked ?? {}));
       const snapshot = await fetchPlayerProgress(true);
       this.profile = snapshot.profile;
+      this.progressLoadFailed = false;
       const newlyUnlocked = Object.keys(snapshot.profile.unlocked)
         .filter((id): id is AchievementId => !previousAwards.has(id as AchievementId));
       if (previousAwards.size > 0 && newlyUnlocked.length > 0) this.presentUnlocks(newlyUnlocked);
@@ -927,6 +934,8 @@ class GameScene extends Phaser.Scene {
         this.showMenu();
       }
     } catch (error) {
+      this.progressLoadFailed = true;
+      if (window.location.pathname === "/" && this.scene.isActive()) this.showMenu();
       console.warn("Could not refresh verified player progress:", error);
     }
   }
