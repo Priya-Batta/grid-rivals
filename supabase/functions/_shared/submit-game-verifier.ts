@@ -11,7 +11,7 @@ import {
 } from "./grid-rivals-rules.ts";
 
 const RUN_ID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
-const SUPPORTED_RULES_VERSION = 1;
+const SUPPORTED_RULES_VERSION = 2;
 const SUPPORTED_RNG_VERSION = 1;
 
 export type SubmitGameRequest = {

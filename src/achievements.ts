@@ -69,7 +69,7 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   {
     id: "perfect-strategist",
     name: "Perfect Strategist",
-    description: "Reach 200 points with moves still remaining.",
+    description: "Reach 300 points after using all moves.",
     xp: 90,
     goal: 1
   }
@@ -299,7 +299,7 @@ export function recordGameCompletion(
   profile.progress.dailyCompleted = Math.max(profile.progress.dailyCompleted, dailyTotal);
   profile.progress.currentStreak = Math.max(0, streak);
 
-  if (score >= WIN_SCORE && movesRemaining > 0) {
+  if (score >= 300 && movesRemaining === 0) {
     profile.progress.perfectWins = Math.max(1, profile.progress.perfectWins);
   }
 
