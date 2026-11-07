@@ -738,11 +738,10 @@ class GameScene extends Phaser.Scene {
       ).setOrigin(0.5).setDepth(32);
     }
 
-    const progress = levelProgress(this.profile.xp);
     this.serverProgressText = this.add.text(
       cx,
       this.isDailyChallenge ? top + 228 : top + 188,
-      this.currentGameRun ? "SERVER PROGRESSION PENDING" : `LOCAL +${reward.gameXp} XP  •  LEVEL ${progress.level}`,
+      this.currentGameRun ? "SERVER PROGRESSION PENDING" : "PRACTICE RUN · NO VERIFIED XP",
       {
         fontFamily: "Arial, Helvetica, sans-serif",
         fontSize: "17px",
