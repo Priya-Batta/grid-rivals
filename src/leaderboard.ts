@@ -70,6 +70,7 @@ export type PlayerProgressSnapshot = {
 
 let playerProgressCache: { expiresAt: number; snapshot: PlayerProgressSnapshot } | null = null;
 let playerProgressRequest: Promise<PlayerProgressSnapshot> | null = null;
+let playerProgressRequestVersion = 0;
 
 const DISPLAY_NAME_KEY = "grid-rivals-display-name";
 const CACHE_TTL_MS = 30_000;
@@ -326,6 +327,7 @@ export async function fetchPlayerProgress(forceRefresh = false): Promise<PlayerP
   }
   if (!forceRefresh && playerProgressRequest) return playerProgressRequest;
   if (forceRefresh) playerProgressCache = null;
+  const requestVersion = ++playerProgressRequestVersion;
 
   const request = (async () => {
     await ensureAnonymousSession();
@@ -346,7 +348,7 @@ export async function fetchPlayerProgress(forceRefresh = false): Promise<PlayerP
     );
     const snapshot = { profile, fetchedAt: Date.now() };
     // A slower request must not overwrite a newer forced refresh.
-    if (playerProgressRequest === request) {
+    if (playerProgressRequestVersion === requestVersion) {
       playerProgressCache = { snapshot, expiresAt: Date.now() + CACHE_TTL_MS };
     }
     return snapshot;
