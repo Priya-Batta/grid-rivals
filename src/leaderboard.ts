@@ -328,6 +328,7 @@ export async function fetchPlayerProgress(forceRefresh = false): Promise<PlayerP
 
   const request = (async () => {
     await ensureAnonymousSession();
+    await ensurePlayerProfile();
     const [progressResponse, awardsResponse] = await Promise.all([
       client.from("grid_rivals_player_progress")
         .select("total_xp,player_level,games_completed,tiles_claimed,best_game_score,daily_challenges_completed,current_daily_streak")
