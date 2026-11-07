@@ -194,10 +194,23 @@ class GameScene extends Phaser.Scene {
   }
 
   private showStatistics() {
-    this.navigationVersion += 1;
+    const version = ++this.navigationVersion;
     this.syncPath("/statistics");
     this.clearScreen();
-    renderStatisticsScreen(this, () => this.showMenu());
+    this.add.text(280, 460, "LOADING VERIFIED STATISTICS...", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "17px", color: "#64748b"
+    }).setOrigin(0.5);
+
+    void this.refreshServerProfile(true).then(() => {
+      if (version !== this.navigationVersion || window.location.pathname !== "/statistics") return;
+      this.clearScreen();
+      renderStatisticsScreen(
+        this,
+        this.profile,
+        () => this.showMenu(),
+        () => this.showStatistics()
+      );
+    });
   }
 
   private showMenu() {
