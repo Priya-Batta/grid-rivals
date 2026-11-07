@@ -1,4 +1,6 @@
 import { createClient } from "@supabase/supabase-js";
+import { profileFromServerData, type ServerPlayerProgress, type ServerAchievementAward } from "./player-progress.ts";
+import type { Profile } from "./achievements.ts";
 import {
   createDailyGameConfig,
   createStandardGameConfig,
@@ -60,6 +62,14 @@ export type PlayerSummary = {
   player_rank: number | null;
   player_level: number;
 };
+
+export type PlayerProgressSnapshot = {
+  profile: Profile;
+  fetchedAt: number;
+};
+
+let playerProgressCache: { expiresAt: number; snapshot: PlayerProgressSnapshot } | null = null;
+let playerProgressRequest: Promise<PlayerProgressSnapshot> | null = null;
 
 const DISPLAY_NAME_KEY = "grid-rivals-display-name";
 const CACHE_TTL_MS = 30_000;
@@ -156,23 +166,13 @@ export async function ensurePlayerProfile(): Promise<PlayerRecord> {
   if (error) throw error;
 
   const profile = firstRow<PlayerRecord>(data);
-  const localName = readDisplayName();
-  if (localName && localName !== profile.display_name) {
-    const { data: updated, error: updateError } = await client.rpc("update_grid_rivals_display_name", {
-      p_display_name: localName
-    });
-    if (!updateError) return firstRow<PlayerRecord>(updated);
+  try {
+    localStorage.setItem(DISPLAY_NAME_KEY, profile.display_name);
+  } catch {
+    // The remote profile remains available if browser storage is disabled.
   }
 
-  if (!localName) {
-    try {
-      localStorage.setItem(DISPLAY_NAME_KEY, profile.display_name);
-    } catch {
-      // The remote profile remains available if browser storage is disabled.
-    }
-  }
-
-  return { ...profile, display_name: localName || profile.display_name };
+  return profile;
 }
 
 export async function updatePlayerDisplayName(value: string): Promise<{ displayName: string; synced: boolean }> {
@@ -180,14 +180,8 @@ export async function updatePlayerDisplayName(value: string): Promise<{ displayN
   const validationError = validateDisplayName(name);
   if (validationError) throw new Error(validationError);
 
-  try {
-    localStorage.setItem(DISPLAY_NAME_KEY, name);
-  } catch {
-    // Continue with the remote update when browser storage is unavailable.
-  }
-
   if (!supabase || !navigator.onLine) {
-    return { displayName: name, synced: false };
+    throw new Error("You are offline. Reconnect before changing your display name.");
   }
 
   await ensureAnonymousSession();
@@ -195,8 +189,13 @@ export async function updatePlayerDisplayName(value: string): Promise<{ displayN
     p_display_name: name
   });
   if (error) throw error;
-
-  return { displayName: firstRow<PlayerRecord>(data).display_name, synced: true };
+  const displayName = firstRow<PlayerRecord>(data).display_name;
+  try {
+    localStorage.setItem(DISPLAY_NAME_KEY, displayName);
+  } catch {
+    // The server profile remains authoritative if browser storage is unavailable.
+  }
+  return { displayName, synced: true };
 }
 
 function functionError(error: unknown): Error {
@@ -319,10 +318,48 @@ export function submitVerifiedGame(runId: string, moves: readonly Position[]): P
   return sharedRequest;
 }
 
+
+export async function fetchPlayerProgress(forceRefresh = false): Promise<PlayerProgressSnapshot> {
+  const client = configuredClient();
+  if (!forceRefresh && playerProgressCache && playerProgressCache.expiresAt > Date.now()) {
+    return playerProgressCache.snapshot;
+  }
+  if (!forceRefresh && playerProgressRequest) return playerProgressRequest;
+
+  const request = (async () => {
+    await ensureAnonymousSession();
+    const [progressResponse, awardsResponse] = await Promise.all([
+      client.from("grid_rivals_player_progress")
+        .select("total_xp,player_level,games_completed,tiles_claimed,best_game_score,daily_challenges_completed,current_daily_streak")
+        .single(),
+      client.from("grid_rivals_achievement_awards")
+        .select("achievement_id,unlocked_at")
+    ]);
+    if (progressResponse.error) throw progressResponse.error;
+    if (awardsResponse.error) throw awardsResponse.error;
+
+    const profile = profileFromServerData(
+      progressResponse.data as ServerPlayerProgress,
+      awardsResponse.data as ServerAchievementAward[]
+    );
+    const snapshot = { profile, fetchedAt: Date.now() };
+    playerProgressCache = { snapshot, expiresAt: Date.now() + CACHE_TTL_MS };
+    return snapshot;
+  })();
+
+  playerProgressRequest = request;
+  try {
+    return await request;
+  } finally {
+    if (playerProgressRequest === request) playerProgressRequest = null;
+  }
+}
+
 export async function refreshLeaderboardData(): Promise<void> {
   if (!supabase || !navigator.onLine) return;
   leaderboardCache.clear();
   summaryCache.clear();
+  playerProgressCache = null;
   try {
     await Promise.all([
       fetchLeaderboard("all", "all", true),
