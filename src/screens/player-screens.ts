@@ -12,7 +12,7 @@ export function renderStatisticsScreen(
   scene: Phaser.Scene,
   onBack: () => void
 ): void {
-  scene.add.text(280, 100, "PLAYER STATISTICS", {
+  scene.add.text(280, 100, "DEVICE-LOCAL PRACTICE STATISTICS", {
     fontSize: "28px",
     color: "#1e293b",
     fontStyle: "bold"
