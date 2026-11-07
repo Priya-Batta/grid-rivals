@@ -97,6 +97,7 @@ export function renderAchievementsScreen(
   ACHIEVEMENTS.forEach((achievement, index) => {
     const y = listTop + index * (cardH + gap) + cardH / 2;
     const unlocked = Boolean(profile.unlocked[achievement.id]);
+    const serverAwardOnly = achievement.id === "first-victory" || achievement.id === "perfect-strategist";
     const current = achievementProgress(profile, achievement.id);
     const ratio = achievement.goal === 0 ? 1 : current / achievement.goal;
 
@@ -125,8 +126,8 @@ export function renderAchievementsScreen(
 
     const trackX = 250;
     const trackW = 110;
-    scene.add.rectangle(trackX, y + 20, trackW, 8, 0xdbe3f3);
-    const progressWidth = Math.max(0, Math.min(trackW, ratio * trackW));
+    if (!serverAwardOnly) scene.add.rectangle(trackX, y + 20, trackW, 8, 0xdbe3f3);
+    const progressWidth = serverAwardOnly ? 0 : Math.max(0, Math.min(trackW, ratio * trackW));
     if (progressWidth > 0) {
       scene.add.rectangle(
         trackX - trackW / 2 + progressWidth / 2,
@@ -137,7 +138,7 @@ export function renderAchievementsScreen(
       );
     }
 
-    scene.add.text(314, y + 20, `${current}/${achievement.goal}`, {
+    scene.add.text(314, y + 20, serverAwardOnly ? "SERVER AWARD" : `${current}/${achievement.goal}`, {
       fontFamily: FONT,
       fontSize: "14px",
       color: "#334155"
