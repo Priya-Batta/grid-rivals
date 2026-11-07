@@ -24,7 +24,7 @@ A repository-wide search found no application use of `sessionStorage`. The appli
 |---|---|---|---|
 | `grid-rivals-sound` | `src/main.ts` | Sound on/off preference | Browser preference; keep local |
 | `grid-rivals-display-name` | `src/leaderboard.ts`, `src/leaderboard-ui.ts` | Cached display name; can be written offline | Supabase profile; local cache only |
-| `grid-rivals-profile` | `src/achievements.ts`, called from `src/main.ts` | Entire local XP, level, achievement unlock and progress profile | Supabase progress/awards; retire as an authority after UI migration |
+| `grid-rivals-profile` | Legacy key; no longer read or written by the application after the server-backed progression cleanup | Historical local XP, level, achievement unlock and progress snapshot | Retain untouched for compatibility; do not treat as authoritative or delete as part of this refactor |
 | `grid-rivals-best-Easy` | `src/main.ts`, `src/screens/player-screens.ts`, `src/achievements.ts` | Device-local Easy best score | Server score history/summary for verified play; optional local practice cache |
 | `grid-rivals-best-Medium` | Same as above | Device-local Medium best score | Same |
 | `grid-rivals-best-Hard` | Same as above | Device-local Hard best score | Same |
@@ -37,10 +37,10 @@ Supabase JS is also configured with `auth.persistSession: true`. The SDK persist
 
 ### Important behaviour behind these keys
 
-- `src/achievements.ts` loads, normalizes, mutates and persists `grid-rivals-profile`.
-- `recordTileClaim()` increments local claimed-tile progress and evaluates/unlocks achievements after every accepted move.
-- `recordGameCompletion()` increments local completed/won counts, local best score and Daily progress, awards local game XP and achievement XP, then persists the profile.
-- `src/main.ts` calls those local progression functions independently of the server finalization response. The game can therefore update local progression even if verified submission later fails or the game was local practice.
+- The menu level bar and Achievements screen consume a profile assembled from Supabase progress and the authenticated player's server-awarded achievements.
+- `src/achievements.ts` now contains achievement definitions and pure display calculations only; it does not load, mutate or persist player progression.
+- The legacy `grid-rivals-profile` key is intentionally left untouched. Its historical values are neither imported into server progress nor displayed as verified progression.
+- A game played in local practice mode cannot grant server XP or achievement awards. Verified progression changes only after successful server finalization.
 - Local best-score keys are updated at game completion and are also passed to the leaderboard UI as local bests. They are not equivalent to verified leaderboard scores.
 - The Statistics screen currently reads local bests and Daily counters directly.
 - The menu level bar and Achievements screen use the local `Profile` object.
@@ -73,11 +73,11 @@ The achievement-award table has an authenticated read policy for the player's ow
 
 ## 4. Gaps and risks to resolve
 
-### P0 — Conflicting progression authorities
+### Resolved in the server-backed progression cleanup — Conflicting progression authorities
 
-The local profile is not a safe authority for XP, levels or achievement unlocks. Local progress can include practice games, individual moves from an unfinished/unverified run, and a game whose server submission has failed. The server correctly awards progression only during verified finalization.
+The menu level bar and Achievements screen now derive progression from Supabase. The client-side achievement module contains only definitions and pure display calculations; it no longer grants XP, unlocks achievements, or persists a local progression profile. The legacy `grid-rivals-profile` key is retained untouched and is not imported.
 
-**Required outcome:** UI progression and achievement unlocks must be derived from server data. Client state may cache/display that data but must not grant it.
+**Remaining boundary:** device-local best scores and Daily counters continue to support the explicitly device-local Statistics screen; they must not be presented as verified server progression.
 
 ### P0 — The server response is not yet a complete UI profile
 
@@ -128,13 +128,13 @@ This matches the client eligibility rule and the achievement description (“Rea
 
 ## 6. Safe implementation sequence
 
-1. **Define read contracts:** add typed frontend models for player progress and achievement awards; use existing server tables/RLS where sufficient. Confirm missing metrics before proposing schema.
-2. **Add server read service:** fetch the authenticated player's progress and own awards; handle loading, offline and unavailable states without inventing zero progress.
-3. **Switch presentation:** update menu level bar and Achievements screen to consume server-backed data. Refresh after successful verified submission. Keep local profile untouched temporarily for rollback/compatibility.
+1. [x] **Define read contracts:** typed frontend models exist for player progress and achievement awards, using existing tables and RLS.
+2. [x] **Add server read service:** fetches the authenticated player's progress and own awards, with explicit loading and unavailable states.
+3. [x] **Switch presentation:** menu level bar and Achievements screen use server-backed data; progress refreshes after verified submission.
 4. **Separate local practice stats:** clearly distinguish verified server scores from device-only practice bests; decide whether Statistics needs a redesign.
-5. **Retire local progression writes:** only after the UI no longer depends on them and regression tests cover verified, practice, offline, refresh and duplicate-submit cases. Do not delete old keys in the same change.
-6. **Fix display-name sync direction:** server wins on initialization; only an explicit edit can change the canonical name.
-7. **Remove obsolete local profile code and keys:** a later, separate cleanup after a compatibility window and explicit acceptance of the data-retirement behaviour.
+5. [x] **Retire local progression writers:** client-side XP grants, achievement unlock evaluation and local profile persistence are removed. The legacy key is retained untouched.
+6. [x] **Fix display-name sync direction:** server wins on initialization; only an explicit edit can change the canonical name.
+7. **Remove obsolete local profile key:** only after a compatibility window and explicit acceptance of the data-retirement behaviour; not part of this cleanup.
 
 ## 7. Explicit non-actions in this audit
 
