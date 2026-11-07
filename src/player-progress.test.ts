@@ -26,8 +26,8 @@ function testServerProfileMapping() {
   assert(profile.progress.bestGameScore === 240, "server best score is used");
   assert(profile.progress.dailyCompleted === 3, "server Daily count is used");
   assert(profile.progress.currentStreak === 2, "server Daily streak is used");
-  assert(profile.unlocked["territory-master"]?.startsWith("2026-11-06"), "award timestamp is retained");
-  assert(profile.unlocked.champion?.startsWith("2026-11-07"), "all server awards are mapped");
+  assert(Boolean(profile.unlocked["territory-master"]?.startsWith("2026-11-06")), "award timestamp is retained");
+  assert(Boolean(profile.unlocked.champion?.startsWith("2026-11-07")), "all server awards are mapped");
   assert(!profile.unlocked["first-victory"], "unawarded achievements remain locked");
 }
 
