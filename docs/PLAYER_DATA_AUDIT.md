@@ -25,12 +25,12 @@ A repository-wide search found no application use of `sessionStorage`. The appli
 | `grid-rivals-sound` | `src/main.ts` | Sound on/off preference | Browser preference; keep local |
 | `grid-rivals-display-name` | `src/leaderboard.ts`, `src/leaderboard-ui.ts` | Cached display name; can be written offline | Supabase profile; local cache only |
 | `grid-rivals-profile` | Legacy key; no longer read or written by the application after the server-backed progression cleanup | Historical local XP, level, achievement unlock and progress snapshot | Retain untouched for compatibility; do not treat as authoritative or delete as part of this refactor |
-| `grid-rivals-best-Easy` | `src/main.ts`, `src/screens/player-screens.ts`, `src/achievements.ts` | Device-local Easy best score | Server score history/summary for verified play; optional local practice cache |
+| `grid-rivals-best-Easy` | `src/main.ts`, `src/screens/player-screens.ts` | Device-local Easy best score | Server score history/summary for verified play; optional local practice cache |
 | `grid-rivals-best-Medium` | Same as above | Device-local Medium best score | Same |
 | `grid-rivals-best-Hard` | Same as above | Device-local Hard best score | Same |
-| `grid-rivals-daily-best` | `src/main.ts`, `src/achievements.ts` | Device-local Daily best score | Server score history/summary for verified Daily play; optional local practice cache |
-| `grid-rivals-daily-total` | `src/main.ts`, `src/screens/player-screens.ts`, `src/achievements.ts` | Device-local Daily completion count | Server daily progress for verified Daily runs |
-| `grid-rivals-daily-streak` | `src/main.ts`, `src/screens/player-screens.ts`, `src/achievements.ts` | Device-local Daily streak | Server daily progress for verified Daily runs |
+| `grid-rivals-daily-best` | `src/main.ts` | Device-local Daily best score | Server score history/summary for verified Daily play; optional local practice cache |
+| `grid-rivals-daily-total` | `src/main.ts`, `src/screens/player-screens.ts` | Device-local Daily completion count | Server daily progress for verified Daily runs |
+| `grid-rivals-daily-streak` | `src/main.ts`, `src/screens/player-screens.ts` | Device-local Daily streak | Server daily progress for verified Daily runs |
 | `grid-rivals-last-daily` | `src/main.ts` | Device-local last completed Daily date, used to calculate streak | Server `last_daily_date` for verified Daily runs |
 
 Supabase JS is also configured with `auth.persistSession: true`. The SDK persists its anonymous authentication session in browser storage using its generated project-specific storage key. This is SDK-managed identity state, not an application-defined key; it must not be cleared as part of the progression refactor.
@@ -43,7 +43,7 @@ Supabase JS is also configured with `auth.persistSession: true`. The SDK persist
 - A game played in local practice mode cannot grant server XP or achievement awards. Verified progression changes only after successful server finalization.
 - Local best-score keys are updated at game completion and are also passed to the leaderboard UI as local bests. They are not equivalent to verified leaderboard scores.
 - The Statistics screen currently reads local bests and Daily counters directly.
-- The menu level bar and Achievements screen use the local `Profile` object.
+- The menu level bar and Achievements screen use the server-backed `Profile` view model returned by `fetchPlayerProgress()`.
 - `recordDailyCompletion()` updates local Daily counters before the verified submission is known to have succeeded.
 - `grid-rivals-display-name` is written locally for offline use. During profile initialization, a differing cached name can be sent back to Supabase, so a stale local cache can overwrite a newer server-side name.
 
