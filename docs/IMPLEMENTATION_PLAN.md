@@ -1,6 +1,6 @@
 # Grid Rivals — Implementation Plan
 
-**Branch:** `improve/ui-performance-pass`  
+**Working branch:** task-specific feature branches based on `main`  
 **Release rule:** No production merge/deploy without explicit approval.  
 **Database rule:** No production schema or data changes without explicit approval.
 
