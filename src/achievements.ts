@@ -75,9 +75,6 @@ export const ACHIEVEMENTS: AchievementDef[] = [
   }
 ];
 
-const STORAGE_KEY = "grid-rivals-profile";
-export const WIN_SCORE = 200;
-
 export type Profile = {
   xp: number;
   level: number;
@@ -113,11 +110,6 @@ export function levelProgress(xp: number): LevelProgress {
   return { level, current: rest, needed };
 }
 
-export function gameRewardXp(score: number, isDaily: boolean): number {
-  const base = 20 + Math.floor(Math.max(0, score) / 10);
-  return base + (isDaily ? 40 : 0);
-}
-
 export function achievementById(id: AchievementId): AchievementDef {
   const found = ACHIEVEMENTS.find((item) => item.id === id);
   if (!found) {
@@ -126,188 +118,25 @@ export function achievementById(id: AchievementId): AchievementDef {
   return found;
 }
 
+/**
+ * Derives display progress from the server-backed profile view model.
+ * Achievement unlocks themselves are supplied only by server award records.
+ */
 export function achievementProgress(profile: Profile, id: AchievementId): number {
   const goal = achievementById(id).goal;
-  const progress = profile.progress;
-
   if (profile.unlocked[id]) return goal;
 
+  const progress = profile.progress;
   const current = {
-    "first-victory": progress.gamesWon,
+    "first-victory": 0,
     "territory-beginner": progress.tilesClaimed,
     "territory-master": progress.tilesClaimed,
     "high-scorer": progress.bestGameScore,
     "champion": progress.bestGameScore,
     "daily-player": progress.dailyCompleted,
     "streak-master": progress.currentStreak,
-    "perfect-strategist": progress.perfectWins
+    "perfect-strategist": 0
   }[id];
 
   return Math.max(0, Math.min(goal, current));
-}
-
-function emptyProfile(): Profile {
-  return {
-    xp: 0,
-    level: 1,
-    unlocked: {},
-    progress: {
-      tilesClaimed: 0,
-      gamesCompleted: 0,
-      gamesWon: 0,
-      bestGameScore: 0,
-      dailyCompleted: 0,
-      currentStreak: 0,
-      perfectWins: 0
-    }
-  };
-}
-
-function readNumber(key: string): number {
-  try {
-    return Number(localStorage.getItem(key) || 0) || 0;
-  } catch {
-    return 0;
-  }
-}
-
-function legacySnapshot() {
-  const bests = [
-    readNumber("grid-rivals-best-Easy"),
-    readNumber("grid-rivals-best-Medium"),
-    readNumber("grid-rivals-best-Hard"),
-    readNumber("grid-rivals-daily-best")
-  ];
-
-  return {
-    best: Math.max(0, ...bests),
-    dailyTotal: readNumber("grid-rivals-daily-total"),
-    streak: readNumber("grid-rivals-daily-streak")
-  };
-}
-
-function persist(profile: Profile) {
-  profile.level = levelProgress(profile.xp).level;
-  try {
-    localStorage.setItem(STORAGE_KEY, JSON.stringify(profile));
-  } catch (error) {
-    console.warn("Could not save player profile:", error);
-  }
-}
-
-function tryUnlock(profile: Profile, id: AchievementId, unlocks: AchievementId[]) {
-  if (profile.unlocked[id]) return;
-  if (achievementProgress(profile, id) < achievementById(id).goal) return;
-
-  profile.unlocked[id] = new Date().toISOString();
-  profile.xp += achievementById(id).xp;
-  unlocks.push(id);
-}
-
-function evaluate(profile: Profile): AchievementId[] {
-  const unlocks: AchievementId[] = [];
-  for (const achievement of ACHIEVEMENTS) {
-    tryUnlock(profile, achievement.id, unlocks);
-  }
-  return unlocks;
-}
-
-function applyLegacy(profile: Profile) {
-  const legacy = legacySnapshot();
-  profile.progress.bestGameScore = Math.max(profile.progress.bestGameScore, legacy.best);
-  profile.progress.dailyCompleted = Math.max(profile.progress.dailyCompleted, legacy.dailyTotal);
-  profile.progress.currentStreak = Math.max(profile.progress.currentStreak, legacy.streak);
-
-  if (profile.progress.gamesCompleted === 0 && (legacy.best > 0 || legacy.dailyTotal > 0)) {
-    profile.progress.gamesCompleted = 1;
-  }
-}
-
-function normalize(value: unknown): Profile {
-  const profile = emptyProfile();
-  if (!value || typeof value !== "object") return profile;
-
-  const raw = value as Partial<Profile>;
-  profile.xp = Math.max(0, Number(raw.xp) || 0);
-  profile.level = Math.max(1, Number(raw.level) || 1);
-
-  if (raw.unlocked && typeof raw.unlocked === "object") {
-    for (const achievement of ACHIEVEMENTS) {
-      const date = raw.unlocked[achievement.id];
-      if (typeof date === "string" && date.length > 0) {
-        profile.unlocked[achievement.id] = date;
-      }
-    }
-  }
-
-  const progress = raw.progress;
-  if (progress && typeof progress === "object") {
-    profile.progress.tilesClaimed = Math.max(0, Number(progress.tilesClaimed) || 0);
-    profile.progress.gamesCompleted = Math.max(0, Number(progress.gamesCompleted) || 0);
-    profile.progress.gamesWon = Math.max(0, Number(progress.gamesWon) || 0);
-    profile.progress.bestGameScore = Math.max(0, Number(progress.bestGameScore) || 0);
-    profile.progress.dailyCompleted = Math.max(0, Number(progress.dailyCompleted) || 0);
-    profile.progress.currentStreak = Math.max(0, Number(progress.currentStreak) || 0);
-    profile.progress.perfectWins = Math.max(0, Number(progress.perfectWins) || 0);
-  }
-
-  return profile;
-}
-
-export function loadProfile(): { profile: Profile; freshUnlocks: AchievementId[] } {
-  let profile = emptyProfile();
-
-  try {
-    const saved = localStorage.getItem(STORAGE_KEY);
-    if (saved) profile = normalize(JSON.parse(saved));
-  } catch (error) {
-    console.warn("Could not read player profile:", error);
-    profile = emptyProfile();
-  }
-
-  applyLegacy(profile);
-  const freshUnlocks = evaluate(profile);
-  profile.level = levelProgress(profile.xp).level;
-  persist(profile);
-
-  return { profile, freshUnlocks };
-}
-
-export function recordTileClaim(
-  profile: Profile,
-  score: number
-): AchievementId[] {
-  profile.progress.tilesClaimed += 1;
-  profile.progress.bestGameScore = Math.max(profile.progress.bestGameScore, score);
-
-  const unlocks = evaluate(profile);
-  persist(profile);
-  return unlocks;
-}
-
-export function recordGameCompletion(
-  profile: Profile,
-  score: number,
-  isDaily: boolean,
-  dailyTotal: number,
-  streak: number,
-  movesRemaining = 0
-): { gameXp: number; unlocks: AchievementId[] } {
-  profile.progress.gamesCompleted += 1;
-  if (score >= WIN_SCORE) profile.progress.gamesWon += 1;
-  profile.progress.bestGameScore = Math.max(profile.progress.bestGameScore, score);
-  profile.progress.dailyCompleted = Math.max(profile.progress.dailyCompleted, dailyTotal);
-  profile.progress.currentStreak = Math.max(0, streak);
-
-  if (score >= 300 && movesRemaining === 0) {
-    profile.progress.perfectWins = Math.max(1, profile.progress.perfectWins);
-  }
-
-  const gameXp = gameRewardXp(score, isDaily);
-  profile.xp += gameXp;
-
-  const unlocks = evaluate(profile);
-  persist(profile);
-
-  return { gameXp, unlocks };
 }
