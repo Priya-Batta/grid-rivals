@@ -7,14 +7,9 @@
 
 ## 1. Executive finding
 
-Grid Rivals already has server-authoritative records for verified scores, XP, levels, aggregate player progress and achievement awards. However, the frontend still maintains a second, independent progression model in browser storage.
+Grid Rivals uses Supabase as the authority for verified scores, XP, levels, aggregate player progress and achievement awards. The menu level bar and Achievements screen now read a server-backed profile; client code no longer grants progression or persists a competing local profile.
 
-This creates a split source of truth:
-- The server awards XP and achievements only when a verified game run is successfully finalized.
-- The client awards local XP and achievements during moves and when a game ends, before server verification is necessarily successful.
-- The menu level bar and Achievements screen currently read the local profile, while the leaderboard can show server-derived level information.
-
-The next implementation work should converge the UI on server-owned progression without importing client-controlled legacy XP or deleting browser data prematurely.
+The remaining separation is intentional: best scores and Daily counters shown on the Statistics screen are still device-local and may include practice or unverified play. They must remain clearly distinguished from verified server records. The legacy `grid-rivals-profile` key is retained untouched and is not imported.
 
 ## 2. Browser storage inventory
 
@@ -59,17 +54,18 @@ The server-side schema and functions are defined in the Supabase migrations, pri
 | `grid_rivals_player_progress` | Total XP, level, games completed, tiles claimed, best game score, Daily completions, current Daily streak, last Daily date | Canonical aggregate progression |
 | `grid_rivals_achievement_awards` | Achievement ID, XP awarded, unlock timestamp | Canonical achievement awards |
 
-Frontend service contracts currently exposed by `src/leaderboard.ts` include:
+Frontend service contracts exposed by `src/leaderboard.ts` include:
 - `ensurePlayerProfile()`: calls `ensure_grid_rivals_profile_v2` and returns user ID, display name and player level.
 - `startVerifiedGame()`: calls `start-game` and validates the server-created run configuration.
 - `submitVerifiedGame()`: calls `submit-game` with the move transcript.
 - `fetchLeaderboard()`: calls `get_grid_rivals_leaderboard`.
 - `fetchPlayerSummary()`: calls `get_grid_rivals_player_summary` and returns best score, rank and player level.
+- `fetchPlayerProgress()`: reads the authenticated player's aggregate progress and own achievement awards to build the UI profile.
 - `updatePlayerDisplayName()`: calls `update_grid_rivals_display_name`.
 
-A successful submission returns verified result data including score, status, move counts, total XP and player level. The current UI displays the returned server XP/level in the result screen, but it does not replace the local profile with that result.
+A successful submission returns verified result data including score, status, move counts, total XP and player level. After successful finalization, the UI refreshes the server-backed progression profile. The menu level bar and Achievements screen use that refreshed profile; they do not use the legacy local profile.
 
-The achievement-award table has an authenticated read policy for the player's own awards, but the current frontend does not fetch those awards for the Achievements screen.
+The achievement-award table's authenticated read policy is used by the frontend to fetch the player's own awards.
 
 ## 4. Gaps and risks to resolve
 
@@ -79,11 +75,11 @@ The menu level bar and Achievements screen now derive progression from Supabase.
 
 **Remaining boundary:** device-local best scores and Daily counters continue to support the explicitly device-local Statistics screen; they must not be presented as verified server progression.
 
-### P0 — The server response is not yet a complete UI profile
+### Resolved — Server-backed progression read model
 
-The current profile and summary calls expose display name, best score, rank and level. The UI also needs aggregate progress and the player's achievement awards. The current progress table does not contain a dedicated `games_won` or per-difficulty best-score field; do not assume those values exist server-side.
+The frontend now has a typed read contract and `fetchPlayerProgress()` service for the authenticated player's aggregate progress and achievement awards. The menu level bar and Achievements screen consume this server-backed profile, with explicit loading/unavailable handling. No schema change was needed for this cleanup.
 
-**Required outcome:** define a read contract for aggregate progress and achievement awards, and decide whether any missing statistic is genuinely required before adding schema.
+The separate device-local Statistics screen remains a follow-up item; its best scores and Daily counters must not be described as verified server statistics.
 
 ### P1 — Legacy/local scores and Daily counters
 
@@ -144,11 +140,14 @@ This matches the client eligibility rule and the achievement description (“Rea
 - No secrets, environment values or production configuration were accessed.
 - No production deployment was triggered.
 
-## 8. Acceptance criteria for the next implementation PR
+## 8. Verification notes for the server-backed progression cleanup
 
-- It introduces a typed, read-only server progress/achievement contract.
-- It does not change score verification, game rules, XP award calculation or database schema unless separately reviewed and approved.
-- It does not clear or migrate any browser storage.
-- It handles offline/loading/error states explicitly.
-- Tests cover valid server data, empty progress, missing configuration and failed reads.
-- Existing routes, game completion and leaderboard behaviour remain unchanged.
+- [x] Typed, read-only server progress and achievement-award contracts use the existing tables and RLS.
+- [x] The menu level bar and Achievements screen consume the server-backed profile.
+- [x] Loading and unavailable states are represented explicitly by the read service/UI.
+- [x] Client-side XP grants, achievement unlock evaluation and local profile persistence are removed.
+- [x] The legacy `grid-rivals-profile` key and all other browser storage keys are left untouched.
+- [x] No score-verification rules, game rules, XP award calculation, database schema, migrations, RLS policies or Edge Functions were changed.
+- [x] Repository tests and production build passed on the PR branch.
+
+The remaining follow-up is to distinguish device-local practice statistics from verified server statistics on the Statistics screen.
