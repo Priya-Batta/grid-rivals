@@ -1,4 +1,4 @@
-import { ACHIEVEMENTS, type AchievementId, type Profile } from "./achievements.ts";
+import { ACHIEVEMENTS, levelProgress, type AchievementId, type Profile } from "./achievements.ts";
 
 export type ServerPlayerProgress = {
   total_xp: number | string;
@@ -40,7 +40,7 @@ export function profileFromServerData(
 
   const xp = count(progressValue.total_xp, "total XP");
   const level = count(progressValue.player_level, "player level");
-  if (level < 1 || level > 10_000) {
+  if (level < 1 || level > 10_000 || levelProgress(xp).level !== level) {
     throw new Error("Player progress returned an invalid player level.");
   }
 
