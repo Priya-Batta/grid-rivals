@@ -18,8 +18,8 @@
 - [x] Review current frontend, package scripts, Supabase schema/migration and Edge Function design.
 - [x] Write the target HLD.
 - [x] Reconcile Supabase setup documentation with server-verified game flow.
-- [ ] Record current environment variables and deployment procedure without exposing secrets.
-- [ ] Confirm the actual deployed migration/function versions before any backend work.
+- [x] Document frontend environment variable names, local environment-file handling and Cloudflare/Supabase deployment procedure without exposing secrets. See [Supabase Setup](../SUPABASE.md).
+- [ ] Verify the actual deployed migration history and Edge Function versions independently in staging and production before any backend work.
 
 **Exit criteria:** documentation accurately describes the code currently in the feature branch; no code or database behaviour changed.
 
