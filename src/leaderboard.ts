@@ -8,7 +8,7 @@ import {
   RULES_VERSION,
   type Difficulty,
   type Position
-} from "../supabase/functions/_shared/grid-rivals-rules.ts";
+} from "../shared/grid-rivals-rules.ts";
 
 export type LeaderboardPeriod = "all" | "today" | "week";
 export type LeaderboardDifficulty = "all" | "easy" | "medium" | "hard";

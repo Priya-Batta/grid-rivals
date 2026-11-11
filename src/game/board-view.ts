@@ -1,5 +1,5 @@
 import Phaser from "phaser";
-import type { GameState } from "../../supabase/functions/_shared/grid-rivals-rules.ts";
+import type { GameState } from "../../shared/grid-rivals-rules.ts";
 
 export type BoardTile = {
   x: number;
