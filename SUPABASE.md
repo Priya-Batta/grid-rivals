@@ -1,61 +1,90 @@
 # Supabase Setup — Current Server-Verified Architecture
 
-This document describes the current server-verified implementation on the `improve/ui-performance-pass` branch. It supersedes the older client-submitted score instructions.
+**Source of truth:** the application code and migrations on `main`. This guide describes the repository's current server-verified game flow; it does not certify which migrations or Edge Function versions are currently deployed to any Supabase project.
 
-## Required project configuration
+## Environment variables
 
-1. Create or use the existing Supabase project.
-2. Enable **Authentication → Sign In / Providers → Anonymous Sign-Ins**.
-3. Configure the local and deployed application URLs in Supabase Auth settings where required.
-4. For local development, copy `.env.example` to `.env` and configure the public frontend values:
+The checked-in `.env.example` lists the only frontend build variables required by the current application:
 
 ```dotenv
 VITE_SUPABASE_URL=https://YOUR_PROJECT_REF.supabase.co
-VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_ANON_OR_PUBLISHABLE_KEY
+VITE_SUPABASE_ANON_KEY=YOUR_SUPABASE_PUBLISHABLE_KEY
 ```
 
-These values are public browser configuration. Never put a Supabase service-role key in a `VITE_` variable or frontend source.
+- `VITE_SUPABASE_URL`: URL of the Supabase project used by that build.
+- `VITE_SUPABASE_ANON_KEY`: public anon/publishable key for that project. It is expected to be visible in the browser.
+- Never put a service-role key, database password, payment secret or other privileged credential in a `VITE_` variable, frontend source, or committed file.
 
-## Database setup
+For local work, use the repository's ignored local environment files (for example, `.env.local` for production configuration and `.env.staging.local` for staging configuration, where present). Keep them out of Git and do not paste their contents into issues, pull requests or chat. Confirm which file Vite loads for the command being run before starting the app or build.
 
-The repository has a base schema and an additive server-verification migration:
+In Cloudflare Pages, configure `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` separately for **Preview** and **Production**. These are build-time public values; changing them requires a new deployment.
 
-1. Review and apply `supabase/schema.sql` to a fresh project.
-2. Apply `supabase/migrations/002_server_verified_games.sql` after the base schema.
-3. For an existing project, inspect the migration history first. Do not blindly rerun SQL or apply the migration a second time.
-4. Preserve existing profiles and scores. The migration marks pre-existing scores as unverified; they remain stored but are excluded from the verified leaderboard.
-5. The migration initializes server-owned progress at level 1 / 0 XP rather than trusting legacy client-controlled XP.
+## Supabase project selection and migrations
 
-Use the Supabase CLI migration workflow for future migrations. Keep the checked-in schema and migration history aligned; do not edit an already-applied migration to change a live database.
+**Always verify the target project before any CLI command that can change remote state.** A locally linked Supabase project can point to production or staging.
+
+From the repository root:
+
+```bash
+npx supabase link --project-ref <INTENDED_PROJECT_REF>
+npx supabase migration list --linked
+```
+
+Check the project reference shown in the Supabase Dashboard before linking. Review the local/remote migration lists and resolve any discrepancy deliberately. Do not blindly rerun SQL, use `db reset` against a linked remote project, or edit a migration that has already been applied.
+
+The repository's migration sequence is:
+
+1. `supabase/migrations/001_initial_schema.sql` — initial profiles and scores schema. `supabase/schema.sql` is the corresponding base schema snapshot for fresh-project setup.
+2. `supabase/migrations/002_server_verified_games.sql` — server-created game runs, replay verification, verified scores and server-owned player progression.
+3. `supabase/migrations/003_full_move_game_completion.sql` — rules version 2, full move-allowance completion semantics, updated score bounds and Perfect Strategist award eligibility.
+
+For a fresh project, apply the migrations in numerical order using the documented Supabase CLI workflow. For an existing project, inspect migration history first and apply only migrations that are genuinely pending, using the staging project before production. Migration 003 must not be edited or reapplied to a project where it is already recorded as applied.
+
+The migration work preserves historical score rows and marks pre-verification scores as unverified; they must not be presented as verified leaderboard results. Do not import browser-local XP or achievements into authoritative server progression.
 
 ## Edge Functions
 
-Deploy both functions from the repository:
+The repository contains two deployed-function entry points:
 
-- `start-game`: validates the caller's access token, derives the user ID from Auth, creates a server-owned run and returns its seed/configuration.
-- `submit-game`: validates the caller, checks the run and submitted move transcript using the shared verifier, and invokes the atomic finalizer.
+- `start-game`: authenticates the caller, derives the player ID from the verified token, and creates a server-owned game run with its seed/configuration.
+- `submit-game`: authenticates the caller, validates the run and move transcript using the shared verifier, and finalizes the result through the database's atomic finalizer.
 
-Deploy with the Supabase CLI from the repository root after linking the intended project:
+After linking and confirming the intended project, inspect the deployed function list in the Supabase Dashboard or CLI before deciding whether a deployment is needed. To deploy intentionally:
 
 ```bash
-supabase functions deploy start-game
-supabase functions deploy submit-game
+npx supabase functions deploy start-game
+npx supabase functions deploy submit-game
 ```
 
-The functions require the project's Supabase URL and service-role secret in the server-side Edge Function environment. The service-role secret must never be exposed to the browser, committed to Git, or copied into a `VITE_` variable. Use the Supabase project's managed secrets and verify the exact function configuration before deployment.
+Supabase Edge Functions use server-side project configuration and privileged credentials. Keep service-role credentials in Supabase-managed function secrets only. Never print, commit, expose or put them in frontend environment variables. Check that required secret *names* are configured without displaying secret values.
 
-## Cloudflare Pages
+## Cloudflare Pages deployment configuration
 
-For the existing Pages project:
+The existing Pages project uses:
 
 - Root directory: repository root
+- Install command: `npm ci`
 - Build command: `npm run build`
 - Build output directory: `dist`
-- Install command: `npm ci`
 
-Set `VITE_SUPABASE_URL` and `VITE_SUPABASE_ANON_KEY` in both Preview and Production build environments. These are public build-time values. A new build is required after changing them.
+The `public/_redirects` file provides the SPA fallback for direct navigation and refresh on application routes.
 
-The `public/_redirects` SPA fallback supports direct navigation and refresh on application routes.
+A push or merge to `main` triggers the configured Pages production deployment. Feature branches/PRs use Preview deployments when enabled. A successful GitHub merge is not, by itself, proof that the Pages deployment completed: check the deployment status and commit SHA in Cloudflare Pages.
+
+## Safe deployment checklist
+
+Use this sequence for backend or frontend releases:
+
+1. Confirm the intended environment (staging or production) and project reference.
+2. Confirm local branch and working tree; fetch the latest `main` before creating a feature branch.
+3. Review migration history with `npx supabase migration list --linked` and inspect deployed Edge Function versions before backend changes.
+4. Run `npm test` and `npm run build`.
+5. Deploy and test staging first: a new game run, valid submission, duplicate submission, invalid transcript rejection, progression refresh and leaderboard visibility.
+6. Confirm Cloudflare Preview deployment for frontend changes.
+7. Production database changes and production deployments require explicit approval. After approval, deploy the exact reviewed commit and verify the Cloudflare deployment status and commit SHA.
+8. Never clear production data as part of routine testing. Use staging for destructive test setup.
+
+Do not assume a migration or function is deployed because its source exists on `main`. Record the actual remote migration and function state before backend work. Do not include secret values in deployment notes.
 
 ## Current trust and data model
 
@@ -65,24 +94,14 @@ The `public/_redirects` SPA fallback supports direct navigation and refresh on a
 - The database finalizer consumes a run once, inserts a verified score and updates XP/progression/achievement awards atomically.
 - Duplicate finalization is handled idempotently.
 - Leaderboards include verified scores only.
-- Existing pre-migration scores are preserved with `is_verified = false`.
+- Existing pre-migration scores are preserved as unverified.
 - Profiles, player progress and achievement awards are protected by RLS; sensitive writes use trusted server-side operations.
 
 Replay verification establishes that a transcript is legal under the current rules. It does not prove a human played or provide complete bot prevention.
 
 ## Account recovery limitation
 
-Anonymous Supabase identity is persisted in the browser. Clearing browser storage can make an unlinked anonymous account inaccessible. Optional account linking is a planned improvement and must preserve the existing Auth user ID and associated data.
-
-## Verification before production deployment
-
-1. Confirm the intended Supabase project reference.
-2. Confirm migration history and deployed Edge Function versions.
-3. Confirm required function secrets exist without printing their values.
-4. Run `npm test` and `npm run build`.
-5. Test a new run, a valid submission, duplicate submission, invalid transcript and leaderboard visibility in a non-production environment.
-6. Deploy to Preview/staging first.
-7. Production deployment requires explicit approval.
+Anonymous Supabase identity is persisted in the browser. Clearing browser storage can make an unlinked anonymous account inaccessible. Optional account linking is planned and must preserve the existing Auth user ID and associated data.
 
 ## Cost and operational notes
 
