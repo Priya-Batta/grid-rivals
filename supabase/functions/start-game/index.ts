@@ -4,7 +4,7 @@ import {
   createStandardGameConfig,
   type Difficulty,
   type GameConfig
-} from "../_shared/grid-rivals-rules.ts";
+} from "../../../shared/grid-rivals-rules.ts";
 
 const MAX_BODY_LENGTH = 4096;
 const DEFAULT_ALLOWED_ORIGINS = [
