@@ -1,7 +1,7 @@
 # Grid Rivals — Player Data Ownership Audit
 
-**Audited baseline:** `main` at commit `527c4adef9d1f5171e0ecdc03d75274e9b7465aa` (PR #5 merge)  
-**Date:** 7 November 2026  
+**Audited baseline:** `main` at commit `51b56b66b6a8135938c1ec76164a6c5cb93ccbb5` (after PR #12)  
+**Date:** 11 November 2026  
 **Scope:** Browser storage, local progression writes, Supabase player data contracts and the next safe refactoring sequence  
 **Change type:** Documentation only; no runtime, schema, migration, secret or production changes
 
@@ -9,7 +9,7 @@
 
 Grid Rivals uses Supabase as the authority for verified scores, XP, levels, aggregate player progress and achievement awards. The menu level bar and Achievements screen now read a server-backed profile; client code no longer grants progression or persists a competing local profile.
 
-The remaining separation is intentional: best scores and Daily counters shown on the Statistics screen are still device-local and may include practice or unverified play. They must remain clearly distinguished from verified server records. The legacy `grid-rivals-profile` key is retained untouched and is not imported.
+The Statistics screen now separates server-backed verified progress from device-local records (implemented in PR #10). Device-local best scores and Daily counters remain on this browser and may include practice or unverified play; they are labelled separately and are not authoritative server progress. The legacy `grid-rivals-profile` key is retained untouched and is not imported.
 
 ## 2. Browser storage inventory
 
@@ -37,7 +37,7 @@ Supabase JS is also configured with `auth.persistSession: true`. The SDK persist
 - The legacy `grid-rivals-profile` key is intentionally left untouched. Its historical values are neither imported into server progress nor displayed as verified progression.
 - A game played in local practice mode cannot grant server XP or achievement awards. Verified progression changes only after successful server finalization.
 - Local best-score keys are updated at game completion and are also passed to the leaderboard UI as local bests. They are not equivalent to verified leaderboard scores.
-- The Statistics screen currently reads local bests and Daily counters directly.
+- The Statistics screen renders a verified section from the server-backed `Profile` and a separate device-only section from `readDeviceStatistics()`. The local section carries an explicit warning that its records may include practice or unverified games.
 - The menu level bar and Achievements screen use the server-backed `Profile` view model returned by `fetchPlayerProgress()`.
 - `recordDailyCompletion()` updates local Daily counters before the verified submission is known to have succeeded.
 - `grid-rivals-display-name` is a local cache for offline use. The server value is canonical during profile initialization; only an explicit display-name edit updates Supabase, after which the cache is refreshed.
@@ -73,17 +73,19 @@ The achievement-award table's authenticated read policy is used by the frontend 
 
 The menu level bar and Achievements screen now derive progression from Supabase. The client-side achievement module contains only definitions and pure display calculations; it no longer grants XP, unlocks achievements, or persists a local progression profile. The legacy `grid-rivals-profile` key is retained untouched and is not imported.
 
-**Remaining boundary:** device-local best scores and Daily counters continue to support the explicitly device-local Statistics screen; they must not be presented as verified server progression.
+**Remaining boundary:** device-local best scores and Daily counters remain useful for personal history, but must not be presented as verified server progression. The Statistics screen now labels this boundary explicitly (PR #10).
 
 ### Resolved — Server-backed progression read model
 
 The frontend now has a typed read contract and `fetchPlayerProgress()` service for the authenticated player's aggregate progress and achievement awards. The menu level bar and Achievements screen consume this server-backed profile, with explicit loading/unavailable handling. No schema change was needed for this cleanup.
 
-The separate device-local Statistics screen remains a follow-up item; its best scores and Daily counters must not be described as verified server statistics.
+The Statistics screen now presents server-backed verified progress separately from device-only records. The latter remain local and are not described as verified server statistics (PR #10).
 
-### P1 — Legacy/local scores and Daily counters
+### Resolved in PR #10 — Legacy/local scores and Daily counters
 
-Local bests and Daily counts may include practice or unverified sessions. They must not be imported as verified scores, XP or server achievement awards. Keep them readable during the transition so existing device history is not silently erased. Decide separately whether they remain labelled local/practice statistics or are retired after a compatibility period.
+Local bests and Daily counts may include practice or unverified sessions. They are not imported as verified scores, XP or server achievement awards. The Statistics screen now displays them in a separate **This Device Only** section, apart from server-backed verified progress, and includes a warning about practice/unverified records. The existing localStorage values are read without migration or deletion, preserving device history.
+
+**Remaining consideration:** decide separately whether to retain these device-only records long term or retire them after a compatibility period. Do not remove or migrate them as part of unrelated work.
 
 ### Resolved — Display-name cache direction
 
@@ -127,7 +129,7 @@ This matches the client eligibility rule and the achievement description (“Rea
 1. [x] **Define read contracts:** typed frontend models exist for player progress and achievement awards, using existing tables and RLS.
 2. [x] **Add server read service:** fetches the authenticated player's progress and own awards, with explicit loading and unavailable states.
 3. [x] **Switch presentation:** menu level bar and Achievements screen use server-backed data; progress refreshes after verified submission.
-4. **Separate local practice stats:** clearly distinguish verified server scores from device-only practice bests; decide whether Statistics needs a redesign.
+4. [x] **Separate local practice stats:** PR #10 separates verified server progress from device-only statistics, preserves existing localStorage values, and adds safe parsing/tests. The current Statistics screen labels the sections separately; device records are not presented as verified.
 5. [x] **Retire local progression writers:** client-side XP grants, achievement unlock evaluation and local profile persistence are removed. The legacy key is retained untouched.
 6. [x] **Fix display-name sync direction:** server wins on initialization; only an explicit edit can change the canonical name.
 7. **Remove obsolete local profile key:** only after a compatibility window and explicit acceptance of the data-retirement behaviour; not part of this cleanup.
@@ -150,4 +152,4 @@ This matches the client eligibility rule and the achievement description (“Rea
 - [x] No score-verification rules, game rules, XP award calculation, database schema, migrations, RLS policies or Edge Functions were changed.
 - [x] Repository tests and production build passed on the PR branch.
 
-The remaining follow-up is to distinguish device-local practice statistics from verified server statistics on the Statistics screen.
+The verified/device-only Statistics presentation is complete (PR #10). Remaining data-ownership work is the separately scoped decision about the legacy `grid-rivals-profile` key and the semantics/long-term retention of local Daily counters; neither should be changed without a dedicated compatibility review.
