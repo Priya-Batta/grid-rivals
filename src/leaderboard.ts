@@ -1,4 +1,9 @@
-import { createClient } from "@supabase/supabase-js";
+import {
+  ensureAnonymousSession,
+  getConfiguredSupabaseClient as configuredClient,
+  getSupabaseClientIfConfigured,
+  isSupabaseConfigured
+} from "./services/supabase-client.ts";
 import { profileFromServerData, type ServerPlayerProgress, type ServerAchievementAward } from "./player-progress.ts";
 import type { Profile } from "./achievements.ts";
 import {
@@ -78,24 +83,16 @@ const NAME_PATTERN = /^[A-Za-z0-9][A-Za-z0-9 _-]{2,19}$/;
 const BLOCKED_NAME_PATTERN = /(^|[^a-z])(fuck|shit|bitch|asshole|cunt)([^a-z]|$)/i;
 const UUID_PATTERN = /^[0-9a-f]{8}-[0-9a-f]{4}-[1-8][0-9a-f]{3}-[89ab][0-9a-f]{3}-[0-9a-f]{12}$/i;
 
-const runtimeEnv = import.meta.env || {} as ImportMetaEnv;
-const supabaseUrl = runtimeEnv.VITE_SUPABASE_URL?.trim();
-const supabaseAnonKey = runtimeEnv.VITE_SUPABASE_ANON_KEY?.trim();
-const supabase = supabaseUrl && supabaseAnonKey
-  ? createClient(supabaseUrl, supabaseAnonKey, {
-      auth: { persistSession: true, autoRefreshToken: true, detectSessionInUrl: false }
-    })
-  : null;
+const supabase = getSupabaseClientIfConfigured();
 
 const leaderboardCache = new Map<string, { expiresAt: number; entries: LeaderboardEntry[] }>();
 const leaderboardRequests = new Map<string, Promise<LeaderboardEntry[]>>();
 const summaryCache = new Map<string, { expiresAt: number; summary: PlayerSummary }>();
 const summaryRequests = new Map<string, Promise<PlayerSummary>>();
-let sessionRequest: Promise<void> | null = null;
 const verifiedSubmissions = new Map<string, Promise<VerifiedGameSubmission>>();
 
 export function isLeaderboardConfigured(): boolean {
-  return supabase !== null;
+  return isSupabaseConfigured();
 }
 
 export function validateDisplayName(value: string): string | null {
@@ -110,33 +107,6 @@ export function validateDisplayName(value: string): string | null {
     return "Please choose a different display name.";
   }
   return null;
-}
-
-function configuredClient() {
-  if (!supabase) {
-    throw new Error("Leaderboard is not configured yet. Local scores are still saved on this device.");
-  }
-  return supabase;
-}
-
-async function ensureAnonymousSession() {
-  const client = configuredClient();
-  if (sessionRequest) return sessionRequest;
-
-  sessionRequest = (async () => {
-    const { data, error } = await client.auth.getSession();
-    if (error) throw error;
-    if (!data.session) {
-      const { error: signInError } = await client.auth.signInAnonymously();
-      if (signInError) throw signInError;
-    }
-  })();
-
-  try {
-    await sessionRequest;
-  } finally {
-    sessionRequest = null;
-  }
 }
 
 function firstRow<T>(data: unknown): T {
