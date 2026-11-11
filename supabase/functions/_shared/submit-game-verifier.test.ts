@@ -6,7 +6,7 @@ import {
   isValidMove,
   type GameConfig,
   type Position
-} from "./grid-rivals-rules.ts";
+} from "../../../shared/grid-rivals-rules.ts";
 import {
   parseSubmitGameRequest,
   VerificationError,
