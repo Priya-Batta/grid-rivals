@@ -1,9 +1,3 @@
-import {
-  startVerifiedGame,
-  submitVerifiedGame,
-  type StartGameMode,
-  type StartedGameRun
-} from "./services/game-service.ts";
 export {
   startVerifiedGame,
   submitVerifiedGame,
