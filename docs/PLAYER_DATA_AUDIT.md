@@ -39,7 +39,7 @@ Supabase JS is also configured with `auth.persistSession: true`. The SDK persist
 - Local best-score keys are updated at game completion and are also passed to the leaderboard UI as local bests. They are not equivalent to verified leaderboard scores.
 - The Statistics screen renders a verified section from the server-backed `Profile` and a separate device-only section from `readDeviceStatistics()`. The local section carries an explicit warning that its records may include practice or unverified games.
 - The menu level bar and Achievements screen use the server-backed `Profile` view model returned by `fetchPlayerProgress()`.
-- `recordDailyCompletion()` updates local Daily counters before the verified submission is known to have succeeded.
+- `recordDailyCompletion()` updates local Daily counters when a Daily game ends, before the verified submission is known to have succeeded. The result modal labels this value **This Device Daily Streak**; it is device-local history, not verified progression.
 - `grid-rivals-display-name` is a local cache for offline use. The server value is canonical during profile initialization; only an explicit display-name edit updates Supabase, after which the cache is refreshed.
 
 ## 3. Server-side data contract
@@ -93,7 +93,11 @@ The server is canonical during profile initialization. A cached local name is av
 
 ### P1 — Daily streak semantics
 
-The server increments Daily progress only when a verified Daily run is finalized, using the run's UTC date. The local counter is updated when the Daily game ends, regardless of verified submission success. The UI should use server Daily progress for competitive/achievement state.
+The server increments Daily progress only when a verified Daily run is finalized, using the run's UTC date. The local counter is updated when the Daily game ends, regardless of verified submission success.
+
+**Presentation boundary:** the result modal now labels the locally calculated value **This Device Daily Streak**. It is a convenience measure of Daily play recorded on this browser and may include an unverified run. The Statistics screen continues to show server-backed verified Daily completions/streak separately from its **This Device Only** counters. Achievements and competitive/verified progression continue to use the server-backed profile only.
+
+**Compatibility:** retain the existing localStorage keys and values. Do not migrate, clear or treat them as verified progress.
 
 
 ### Resolved — Perfect Strategist award condition
