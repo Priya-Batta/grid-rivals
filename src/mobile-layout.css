@@ -1,0 +1,58 @@
+/* Mobile gameplay orientation guidance.
+   The game board uses a portrait 560 × 920 logical canvas. On short,
+   narrow landscape screens, ask players to rotate instead of shrinking
+   the board to an impractical size. The DOM leaderboard remains available. */
+
+#orientation-notice {
+  display: none;
+}
+
+@media (orientation: landscape) and (max-height: 520px) and (max-width: 900px) {
+  #app > canvas {
+    display: none !important;
+  }
+
+  #orientation-notice {
+    position: fixed;
+    inset: 0;
+    z-index: 10;
+    display: grid;
+    place-content: center;
+    justify-items: center;
+    gap: 14px;
+    padding: max(24px, env(safe-area-inset-top, 0px))
+      max(24px, env(safe-area-inset-right, 0px))
+      max(24px, env(safe-area-inset-bottom, 0px))
+      max(24px, env(safe-area-inset-left, 0px));
+    color: #1e293b;
+    background:
+      radial-gradient(ellipse at 15% 10%, rgba(129, 140, 248, .18), transparent 42%),
+      linear-gradient(135deg, #f8faff 0%, #eef4ff 55%, #f7fbff 100%);
+    text-align: center;
+    font-family: Inter, ui-sans-serif, system-ui, -apple-system, BlinkMacSystemFont, "Segoe UI", sans-serif;
+  }
+
+  #orientation-notice .orientation-icon {
+    font-size: clamp(42px, 10vh, 64px);
+    line-height: 1;
+  }
+
+  #orientation-notice h1 {
+    margin: 0;
+    color: #312e81;
+    font-size: clamp(20px, 4vw, 28px);
+  }
+
+  #orientation-notice p {
+    max-width: 34rem;
+    margin: 0;
+    color: #475569;
+    font-size: clamp(14px, 2vw, 17px);
+    line-height: 1.5;
+  }
+}
+
+/* Keep the leaderboard above the gameplay orientation notice. */
+.leaderboard-overlay {
+  z-index: 20;
+}
