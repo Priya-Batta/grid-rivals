@@ -28,7 +28,7 @@
 1. [x] Inventory every localStorage/sessionStorage key and every local progression write. See [Player Data Ownership Audit](./PLAYER_DATA_AUDIT.md).
 2. [x] Identify the current frontend/server data contracts for profile, progress, achievements, scores and leaderboard. Gaps and the target read contract are documented in the [Player Data Ownership Audit](./PLAYER_DATA_AUDIT.md).
 3. Define a typed API/service boundary without changing behaviour.
-4. Move pure game rules into a neutral shared module; preserve deterministic replay and version compatibility.
+4. [x] Move pure game rules into a neutral `shared/` module used by the browser and server verifier; preserve deterministic replay and version compatibility.
 5. Split the game entry point into focused modules in small steps.
 6. [x] Make server data authoritative in the UI; retain local preferences and safe caches. Verified statistics, achievements and leaderboard data are distinct from device-only history.
 7. Add tests for account initialization, refresh/navigation, duplicate submissions, offline behaviour and progression rendering.
