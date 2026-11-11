@@ -5,6 +5,11 @@ import { createBoardView, refreshBoardView, type BoardTile } from "./game/board-
 import "./style.css";
 import { recordDailyCompletion } from "./services/daily-progress.ts";
 import {
+  readBestScore,
+  recordBestScore,
+  readStandardBestScores
+} from "./services/device-best-scores.ts";
+import {
   applyMove,
   createDailyGameConfig,
   createGameState,
@@ -487,11 +492,11 @@ class GameScene extends Phaser.Scene {
     homeLabel.setInteractive({ useHandCursor: true });
     homeLabel.on("pointerdown", () => this.showMenu());
 
-    const bestKey = this.isDailyChallenge
-      ? "grid-rivals-daily-best"
-      : "grid-rivals-best-" + this.difficulty;
-
-    const best = Number(localStorage.getItem(bestKey) || 0);
+    const best = readBestScore(
+      localStorage,
+      this.difficulty,
+      this.isDailyChallenge
+    );
 
     this.bestText = this.add.text(this.startX + hudW - 16, hudY, `BEST: ${best}`, {
       fontFamily: "Arial, Helvetica, sans-serif",
@@ -636,14 +641,12 @@ class GameScene extends Phaser.Scene {
     }
 
     // Separate all-time best scores for each game mode
-    const key = this.isDailyChallenge
-      ? "grid-rivals-daily-best"
-      : "grid-rivals-best-" + this.difficulty;
-
-    const oldBest = Number(localStorage.getItem(key) || 0);
-    const best = Math.max(oldBest, this.score);
-
-    localStorage.setItem(key, String(best));
+    const best = recordBestScore(
+      localStorage,
+      this.score,
+      this.difficulty,
+      this.isDailyChallenge
+    );
     this.bestText.setText(`BEST: ${best}`);
 
     const cx = this.viewW / 2;
@@ -875,11 +878,7 @@ class GameScene extends Phaser.Scene {
 
     this.leaderboardView = new LeaderboardView(container, {
       playerLevel: this.profile?.level ?? 1,
-      localBests: {
-        easy: Number(localStorage.getItem("grid-rivals-best-Easy") || 0),
-        medium: Number(localStorage.getItem("grid-rivals-best-Medium") || 0),
-        hard: Number(localStorage.getItem("grid-rivals-best-Hard") || 0)
-      },
+      localBests: readStandardBestScores(localStorage),
       onClose: () => this.showMenu()
     });
   }

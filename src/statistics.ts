@@ -1,3 +1,5 @@
+import { readStandardBestScores } from "./services/device-best-scores.ts";
+
 export type DeviceStatistics = {
   easyBest: number;
   mediumBest: number;
@@ -12,14 +14,19 @@ function nonNegativeInteger(value: string | null): number {
   return Number.isSafeInteger(parsed) && parsed >= 0 ? parsed : 0;
 }
 
+function safeBestScore(value: number): number {
+  return Number.isSafeInteger(value) && value >= 0 ? value : 0;
+}
+
 /** Reads legacy device-only records without modifying or migrating them. */
 export function readDeviceStatistics(storage?: Pick<Storage, "getItem">): DeviceStatistics {
   try {
     const source = storage ?? globalThis.localStorage;
+    const bestScores = readStandardBestScores(source);
     return {
-      easyBest: nonNegativeInteger(source.getItem("grid-rivals-best-Easy")),
-      mediumBest: nonNegativeInteger(source.getItem("grid-rivals-best-Medium")),
-      hardBest: nonNegativeInteger(source.getItem("grid-rivals-best-Hard")),
+      easyBest: safeBestScore(bestScores.easy),
+      mediumBest: safeBestScore(bestScores.medium),
+      hardBest: safeBestScore(bestScores.hard),
       dailyCompleted: nonNegativeInteger(source.getItem("grid-rivals-daily-total")),
       dailyStreak: nonNegativeInteger(source.getItem("grid-rivals-daily-streak"))
     };
