@@ -34,17 +34,17 @@ Check the project reference shown in the Supabase Dashboard before linking. Revi
 
 The repository's migration sequence is:
 
-1. `supabase/migrations/001_initial_schema.sql` — initial profiles and scores schema. `supabase/schema.sql` is the corresponding base schema snapshot for fresh-project setup.
+1. `supabase/migrations/001_initial_schema.sql` — initial profiles and scores schema.
 2. `supabase/migrations/002_server_verified_games.sql` — server-created game runs, replay verification, verified scores and server-owned player progression.
 3. `supabase/migrations/003_full_move_game_completion.sql` — rules version 2, full move-allowance completion semantics, updated score bounds and Perfect Strategist award eligibility.
 
-For a fresh project, apply the migrations in numerical order using the documented Supabase CLI workflow. For an existing project, inspect migration history first and apply only migrations that are genuinely pending, using the staging project before production. Migration 003 must not be edited or reapplied to a project where it is already recorded as applied.
+`supabase/schema.sql` is a schema snapshot corresponding to the initial schema; do not apply it separately and then also apply migration 001. For a fresh project, apply the migrations in numerical order using the documented Supabase CLI workflow. For an existing project, inspect migration history first and apply only migrations that are genuinely pending, using the staging project before production. Migration 003 must not be edited or reapplied to a project where it is already recorded as applied.
 
 The migration work preserves historical score rows and marks pre-verification scores as unverified; they must not be presented as verified leaderboard results. Do not import browser-local XP or achievements into authoritative server progression.
 
 ## Edge Functions
 
-The repository contains two deployed-function entry points:
+The repository contains two Edge Function entry points:
 
 - `start-game`: authenticates the caller, derives the player ID from the verified token, and creates a server-owned game run with its seed/configuration.
 - `submit-game`: authenticates the caller, validates the run and move transcript using the shared verifier, and finalizes the result through the database's atomic finalizer.
