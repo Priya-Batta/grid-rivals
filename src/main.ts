@@ -715,7 +715,7 @@ class GameScene extends Phaser.Scene {
       this.add.text(
         cx,
         top + 190,
-        `DAILY STREAK: ${this.dailyStreak} DAYS`,
+        `THIS DEVICE DAILY STREAK: ${this.dailyStreak} DAYS`,
         {
           fontFamily: "Arial, Helvetica, sans-serif",
           fontSize: "18px",
