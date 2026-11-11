@@ -13,8 +13,6 @@ import {
 
 export type StartGameMode = "standard" | "daily";
 
-export type StartGameMode = "standard" | "daily";
-
 export type StartedGameRun = {
   runId: string;
   mode: StartGameMode;
