@@ -1,5 +1,6 @@
 
 import Phaser from "phaser";
+import type { LeaderboardView } from "./leaderboard-ui.ts";
 import { resolveAppRoute } from "./app/routes.ts";
 import { createBoardView, refreshBoardView, type BoardTile } from "./game/board-view.ts";
 import "./style.css";
