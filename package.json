@@ -6,7 +6,7 @@
   "scripts": {
     "dev": "vite",
     "build": "tsc && vite build",
-    "test": "node --experimental-strip-types src/achievements.test.ts && node --experimental-strip-types src/statistics.test.ts && node --experimental-strip-types src/leaderboard.test.ts && node --experimental-strip-types src/player-progress.test.ts && node --experimental-strip-types shared/grid-rivals-rules.test.ts && node --experimental-strip-types supabase/functions/_shared/submit-game-verifier.test.ts && node --experimental-strip-types src/app/routes.test.ts",
+    "test": "node --experimental-strip-types src/achievements.test.ts && node --experimental-strip-types src/statistics.test.ts && node --experimental-strip-types src/leaderboard.test.ts && node --experimental-strip-types src/player-progress.test.ts && node --experimental-strip-types src/services/daily-progress.test.ts && node --experimental-strip-types shared/grid-rivals-rules.test.ts && node --experimental-strip-types supabase/functions/_shared/submit-game-verifier.test.ts && node --experimental-strip-types src/app/routes.test.ts",
     "preview": "vite preview"
   },
   "devDependencies": {
