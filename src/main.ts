@@ -1,5 +1,6 @@
 
 import Phaser from "phaser";
+import type { LeaderboardView } from "./leaderboard-ui.ts";
 import { resolveAppRoute } from "./app/routes.ts";
 import { createBoardView, refreshBoardView, type BoardTile } from "./game/board-view.ts";
 import "./style.css";
@@ -20,8 +21,6 @@ import {
   type GameState,
   WIN_SCORE
 } from "../shared/grid-rivals-rules.ts";
-import { LeaderboardView } from "./leaderboard-ui";
-import { renderAchievementsScreen, renderStatisticsScreen } from "./screens/player-screens";
 import {
   fetchPlayerProgress,
   refreshLeaderboardData,
@@ -170,7 +169,7 @@ class GameScene extends Phaser.Scene {
     this.dailyStreak = recordDailyCompletion(localStorage);
   }
 
-  private showStatistics() {
+  private async showStatistics() {
     const version = ++this.navigationVersion;
     this.syncPath("/statistics");
     this.clearScreen();
@@ -178,16 +177,16 @@ class GameScene extends Phaser.Scene {
       fontFamily: "Arial, Helvetica, sans-serif", fontSize: "17px", color: "#64748b"
     }).setOrigin(0.5);
 
-    void this.refreshServerProfile(true).then(() => {
-      if (version !== this.navigationVersion || window.location.pathname !== "/statistics") return;
-      this.clearScreen();
-      renderStatisticsScreen(
-        this,
-        this.profile,
-        () => this.showMenu(),
-        () => this.showStatistics()
-      );
-    });
+    await this.refreshServerProfile(true);
+    const { renderStatisticsScreen } = await import("./screens/player-screens.ts");
+    if (version !== this.navigationVersion || window.location.pathname !== "/statistics") return;
+    this.clearScreen();
+    renderStatisticsScreen(
+      this,
+      this.profile,
+      () => this.showMenu(),
+      () => this.showStatistics()
+    );
   }
 
   private showMenu() {
@@ -866,8 +865,8 @@ class GameScene extends Phaser.Scene {
     }
   }
 
-  private showLeaderboard() {
-    this.navigationVersion += 1;
+  private async showLeaderboard() {
+    const version = ++this.navigationVersion;
     this.syncPath("/leaderboard");
     this.clearScreen();
     const container = document.getElementById("app");
@@ -876,6 +875,8 @@ class GameScene extends Phaser.Scene {
       return;
     }
 
+    const { LeaderboardView } = await import("./leaderboard-ui.ts");
+    if (version !== this.navigationVersion || window.location.pathname !== "/leaderboard") return;
     this.leaderboardView = new LeaderboardView(container, {
       playerLevel: this.profile?.level ?? 1,
       localBests: readStandardBestScores(localStorage),
@@ -883,24 +884,24 @@ class GameScene extends Phaser.Scene {
     });
   }
 
-  private showAchievements() {
+  private async showAchievements() {
     const version = ++this.navigationVersion;
     this.syncPath("/achievements");
     this.clearScreen();
     this.add.text(280, 460, "LOADING VERIFIED ACHIEVEMENTS...", {
       fontFamily: "Arial, Helvetica, sans-serif", fontSize: "17px", color: "#64748b"
     }).setOrigin(0.5);
-    void this.refreshServerProfile().then(() => {
-      if (version !== this.navigationVersion || window.location.pathname !== "/achievements") return;
-      this.clearScreen();
-      if (this.profile) {
-        renderAchievementsScreen(this, this.profile, () => this.showMenu());
-      } else {
-        this.add.text(280, 460, "PLAYER PROGRESS IS CURRENTLY UNAVAILABLE", {
-          fontFamily: "Arial, Helvetica, sans-serif", fontSize: "16px", color: "#b45309"
-        }).setOrigin(0.5);
-      }
-    });
+    await this.refreshServerProfile();
+    const { renderAchievementsScreen } = await import("./screens/player-screens.ts");
+    if (version !== this.navigationVersion || window.location.pathname !== "/achievements") return;
+    this.clearScreen();
+    if (this.profile) {
+      renderAchievementsScreen(this, this.profile, () => this.showMenu());
+    } else {
+      this.add.text(280, 460, "PLAYER PROGRESS IS CURRENTLY UNAVAILABLE", {
+        fontFamily: "Arial, Helvetica, sans-serif", fontSize: "16px", color: "#b45309"
+      }).setOrigin(0.5);
+    }
   }
 
   private async refreshServerProfile(forceRefresh = false): Promise<void> {
