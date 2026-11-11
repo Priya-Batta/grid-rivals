@@ -15,7 +15,7 @@ import {
   type GameConfig,
   type GameState,
   type Position
-} from "../supabase/functions/_shared/grid-rivals-rules.ts";
+} from "./grid-rivals-rules.ts";
 
 function assert(condition: boolean, message: string) {
   if (!condition) throw new Error(message);
