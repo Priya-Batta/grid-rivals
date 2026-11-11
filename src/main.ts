@@ -13,7 +13,7 @@ import {
   type GameConfig,
   type GameState,
   WIN_SCORE
-} from "../supabase/functions/_shared/grid-rivals-rules.ts";
+} from "../shared/grid-rivals-rules.ts";
 import { LeaderboardView } from "./leaderboard-ui";
 import { renderAchievementsScreen, renderStatisticsScreen } from "./screens/player-screens";
 import {
