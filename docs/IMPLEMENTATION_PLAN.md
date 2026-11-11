@@ -30,7 +30,7 @@
 3. Define a typed API/service boundary without changing behaviour.
 4. Move pure game rules into a neutral shared module; preserve deterministic replay and version compatibility.
 5. Split the game entry point into focused modules in small steps.
-6. Make server data authoritative in the UI; retain local preferences and safe caches.
+6. [x] Make server data authoritative in the UI; retain local preferences and safe caches. Verified statistics, achievements and leaderboard data are distinct from device-only history.
 7. Add tests for account initialization, refresh/navigation, duplicate submissions, offline behaviour and progression rendering.
 
 **Exit criteria:** existing gameplay, routes, leaderboard, verified submissions and player progression continue to work; local data cannot grant authoritative XP or entitlements.
