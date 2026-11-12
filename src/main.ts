@@ -205,7 +205,7 @@ class GameScene extends Phaser.Scene {
       fontStyle: "bold"
     }).setOrigin(0.5));
 
-    add(this.add.text(280, 220, "CLAIM TILES. SCORE 200. CONQUER THE GRID.", {
+    add(this.add.text(280, 220, "CLAIM TILES. SCORE 200 OR MORE. CONQUER THE GRID.", {
       fontFamily: "Arial, Helvetica, sans-serif",
       fontSize: "13px",
       color: "#0284c7",
@@ -217,7 +217,7 @@ class GameScene extends Phaser.Scene {
       ["1  START IN THE CENTRE", "Your first tile is the ★ in the middle of the board."],
       ["2  CLAIM A NEIGHBOURING TILE", "Choose an unclaimed tile directly above, below, left or right of a tile you own. Diagonal tiles do not count."],
       ["3  EARN POINTS", "Each tile is worth its number × 10. A tile marked 3 earns 30 points."],
-      ["4  REACH 200 TO WIN", "Use all your available moves and finish with at least 200 points."]
+      ["4  SCORE 200 OR MORE TO WIN", "Use all your available moves and finish with at least 200 points."]
     ];
 
     const positions = [282, 374, 486, 578];
