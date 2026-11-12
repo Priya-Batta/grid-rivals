@@ -208,12 +208,27 @@ class GameScene extends Phaser.Scene {
       backgroundColor: "#15803d", padding: { x: 24, y: 15 }
     }).setOrigin(0.5);
 
-    const privacy = this.add.text(280, 650, "PRIVACY POLICY", {
+    const decline = this.add.text(280, 625, "I DO NOT MEET THE MINIMUM AGE", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "13px", color: "#b91c1c"
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    decline.on("pointerdown", async () => {
+      if (!this.ageGateCountry) return;
+      decline.disableInteractive();
+      try {
+        await confirmAgeEligibility(this.ageGateCountry, false);
+        this.showAgeGate(true);
+      } catch (error) {
+        console.warn("Could not save age ineligibility:", error);
+        decline.setInteractive({ useHandCursor: true });
+      }
+    });
+
+    const privacy = this.add.text(280, 690, "PRIVACY POLICY", {
       fontFamily: "Arial, Helvetica, sans-serif", fontSize: "14px", color: "#4f46e5"
     }).setOrigin(0.5);
     privacy.setInteractive({ useHandCursor: true });
     privacy.on("pointerdown", () => window.open("/privacy.html", "_blank", "noopener"));
-    const terms = this.add.text(280, 680, "TERMS OF SERVICE", {
+    const terms = this.add.text(280, 720, "TERMS OF SERVICE", {
       fontFamily: "Arial, Helvetica, sans-serif", fontSize: "14px", color: "#4f46e5"
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     terms.on("pointerdown", () => window.open("/terms.html", "_blank", "noopener"));
