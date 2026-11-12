@@ -83,9 +83,8 @@ class GameScene extends Phaser.Scene {
   private readonly gridSpan = 8 * 63 + 7 * 4;
   private readonly startX = (560 - (8 * 63 + 7 * 4)) / 2;
   private readonly startY = 312;
-  private ageGateReady = false;
   private ageGateAllowed = false;
-  private ageGateCountry: "IN" | "OTHER" = "IN";
+  private ageGateCountry: "IN" | "OTHER" | null = null;
   private navigationVersion = 0;
   private readonly popStateHandler = () => this.renderPath(window.location.pathname);
 
@@ -109,7 +108,6 @@ class GameScene extends Phaser.Scene {
   }
 
   private async initializeAgeGate() {
-    this.ageGateReady = false;
     this.ageGateAllowed = false;
     this.clearScreen();
     this.add.text(280, 430, "CHECKING AGE CONFIRMATION...", {
@@ -120,7 +118,6 @@ class GameScene extends Phaser.Scene {
       const status = await fetchAgeGateStatus();
       if (status.confirmed && status.eligible === true) {
         this.ageGateAllowed = true;
-        this.ageGateReady = true;
         this.renderPath(window.location.pathname);
         void this.refreshServerProfile();
         return;
@@ -181,7 +178,7 @@ class GameScene extends Phaser.Scene {
       backgroundColor: "#e2e8f0", padding: { x: 24, y: 13 }
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
 
-    const requirement = this.add.text(280, 385, "India: you must be 18 or older.", {
+    const requirement = this.add.text(280, 385, "Choose your country or region to see the minimum age.", {
       fontFamily: "Arial, Helvetica, sans-serif", fontSize: "16px", color: "#334155",
       align: "center", wordWrap: { width: 430 }
     }).setOrigin(0.5);
@@ -196,6 +193,7 @@ class GameScene extends Phaser.Scene {
         ? "India: you must be 18 or older."
         : "Outside India: you must be at least 13 and meet any higher local minimum age.");
       confirm.setText(country === "IN" ? "I AM 18 OR OLDER" : "I MEET THE MINIMUM AGE");
+      confirm.setInteractive({ useHandCursor: true });
     };
     india.on("pointerdown", () => selectCountry("IN"));
     other.on("pointerdown", () => selectCountry("OTHER"));
@@ -205,12 +203,12 @@ class GameScene extends Phaser.Scene {
       align: "center", wordWrap: { width: 430 }
     }).setOrigin(0.5);
 
-    const confirm = this.add.text(280, 560, "I AM 18 OR OLDER", {
+    const confirm = this.add.text(280, 560, "SELECT COUNTRY FIRST", {
       fontFamily: "Arial, Helvetica, sans-serif", fontSize: "18px", color: "#ffffff",
       backgroundColor: "#15803d", padding: { x: 24, y: 15 }
-    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    }).setOrigin(0.5);
 
-    const privacy = this.add.text(280, 650, "PRIVACY POLICY  ·  TERMS", {
+    const privacy = this.add.text(280, 650, "PRIVACY POLICY", {
       fontFamily: "Arial, Helvetica, sans-serif", fontSize: "14px", color: "#4f46e5"
     }).setOrigin(0.5);
     privacy.setInteractive({ useHandCursor: true });
@@ -219,10 +217,10 @@ class GameScene extends Phaser.Scene {
       confirm.disableInteractive();
       confirm.setText("SAVING...");
       try {
+        if (!this.ageGateCountry) return;
         const result = await confirmAgeEligibility(this.ageGateCountry, true);
         if (!result.confirmed || result.eligible !== true) throw new Error("Age confirmation was not accepted.");
         this.ageGateAllowed = true;
-        this.ageGateReady = true;
         this.renderPath("/");
         void this.refreshServerProfile();
       } catch (error) {
