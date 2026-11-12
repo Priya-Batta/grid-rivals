@@ -186,6 +186,16 @@ export async function handler(request: Request): Promise<Response> {
       throw new HttpError(401, "Supabase access token is invalid or expired.");
     }
 
+    const ageGate = userData.user.app_metadata?.grid_rivals_age_gate;
+    if (
+      !ageGate ||
+      ageGate.policyVersion !== 1 ||
+      ageGate.eligible !== true ||
+      (ageGate.country !== "IN" && ageGate.country !== "OTHER")
+    ) {
+      throw new HttpError(403, "Confirm that you meet the minimum age before playing.");
+    }
+
     const input = parseSubmitGameRequest(await readJsonBody(request));
     const { data: run, error: runError } = await clients.serviceClient
       .from("grid_rivals_game_runs")
