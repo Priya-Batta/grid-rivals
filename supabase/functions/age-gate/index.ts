@@ -72,6 +72,11 @@ Deno.serve(async (request: Request) => {
       typeof input.eligible !== "boolean"
     ) return respond(request, 400, { error: "Choose a country and confirm the applicable minimum age." });
 
+    const existingRecord = data.user.app_metadata?.grid_rivals_age_gate;
+    if (existingRecord?.policyVersion === POLICY_VERSION) {
+      return respond(request, 409, { error: "Age confirmation has already been recorded for this policy." });
+    }
+
     const record = {
       country: input.country,
       eligible: input.eligible,
