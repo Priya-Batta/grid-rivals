@@ -2,6 +2,7 @@
 import Phaser from "phaser";
 import type { LeaderboardView } from "./leaderboard-ui.ts";
 import { resolveAppRoute } from "./app/routes.ts";
+import { fetchAgeGateStatus, confirmAgeEligibility } from "./services/age-gate.ts";
 import { createBoardView, refreshBoardView, type BoardTile } from "./game/board-view.ts";
 import "./style.css";
 import { markHowToPlaySeen, shouldShowHowToPlay } from "./services/onboarding.ts";
@@ -82,6 +83,9 @@ class GameScene extends Phaser.Scene {
   private readonly gridSpan = 8 * 63 + 7 * 4;
   private readonly startX = (560 - (8 * 63 + 7 * 4)) / 2;
   private readonly startY = 312;
+  private ageGateReady = false;
+  private ageGateAllowed = false;
+  private ageGateCountry: "IN" | "OTHER" = "IN";
   private navigationVersion = 0;
   private readonly popStateHandler = () => this.renderPath(window.location.pathname);
 
@@ -101,8 +105,132 @@ class GameScene extends Phaser.Scene {
       this.audioContext = undefined;
     });
 
-    this.renderPath(window.location.pathname);
-    void this.refreshServerProfile();
+    void this.initializeAgeGate();
+  }
+
+  private async initializeAgeGate() {
+    this.ageGateReady = false;
+    this.ageGateAllowed = false;
+    this.clearScreen();
+    this.add.text(280, 430, "CHECKING AGE CONFIRMATION...", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "17px", color: "#64748b"
+    }).setOrigin(0.5);
+
+    try {
+      const status = await fetchAgeGateStatus();
+      if (status.confirmed && status.eligible === true) {
+        this.ageGateAllowed = true;
+        this.ageGateReady = true;
+        this.renderPath(window.location.pathname);
+        void this.refreshServerProfile();
+        return;
+      }
+      this.showAgeGate(status.confirmed && status.eligible === false);
+    } catch (error) {
+      console.warn("Age confirmation could not be checked:", error);
+      this.showAgeGateError();
+    }
+  }
+
+  private showAgeGateError() {
+    this.clearScreen();
+    this.add.rectangle(280, 460, 520, 880, 0xf5f7ff).setStrokeStyle(2, 0xdbe3f3);
+    this.add.text(280, 350, "AGE CONFIRMATION UNAVAILABLE", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "22px", color: "#1e293b", fontStyle: "bold"
+    }).setOrigin(0.5);
+    this.add.text(280, 410, "Connect to the internet and retry. Your saved progress is safe.", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "15px", color: "#475569",
+      align: "center", wordWrap: { width: 420 }
+    }).setOrigin(0.5);
+    const retry = this.add.text(280, 500, "RETRY", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "20px", color: "#ffffff",
+      backgroundColor: "#4f46e5", padding: { x: 30, y: 14 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    retry.on("pointerdown", () => void this.initializeAgeGate());
+  }
+
+  private showAgeGate(alreadyIneligible = false) {
+    this.clearScreen();
+    this.syncPath("/", true);
+    this.add.rectangle(280, 460, 520, 880, 0xf5f7ff).setStrokeStyle(2, 0xdbe3f3);
+    this.add.text(280, 185, "BEFORE YOU PLAY", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "30px", color: "#1e293b", fontStyle: "bold"
+    }).setOrigin(0.5);
+
+    if (alreadyIneligible) {
+      this.add.text(280, 340, "YOU CANNOT ACCESS GRID RIVALS", {
+        fontFamily: "Arial, Helvetica, sans-serif", fontSize: "20px", color: "#b91c1c", fontStyle: "bold"
+      }).setOrigin(0.5);
+      this.add.text(280, 410, "Your previous confirmation did not meet the minimum age requirement. Your saved progress has not been deleted.", {
+        fontFamily: "Arial, Helvetica, sans-serif", fontSize: "16px", color: "#475569",
+        align: "center", wordWrap: { width: 420 }
+      }).setOrigin(0.5);
+      return;
+    }
+
+    this.add.text(280, 255, "Select your country or region:", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "17px", color: "#334155"
+    }).setOrigin(0.5);
+
+    const india = this.add.text(170, 315, "INDIA", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "18px", color: "#ffffff",
+      backgroundColor: "#4f46e5", padding: { x: 24, y: 13 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    const other = this.add.text(390, 315, "OTHER", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "18px", color: "#1e293b",
+      backgroundColor: "#e2e8f0", padding: { x: 24, y: 13 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    const requirement = this.add.text(280, 385, "India: you must be 18 or older.", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "16px", color: "#334155",
+      align: "center", wordWrap: { width: 430 }
+    }).setOrigin(0.5);
+
+    const selectCountry = (country: "IN" | "OTHER") => {
+      this.ageGateCountry = country;
+      india.setStyle({ color: country === "IN" ? "#ffffff" : "#1e293b" });
+      india.setBackgroundColor(country === "IN" ? "#4f46e5" : "#e2e8f0");
+      other.setStyle({ color: country === "OTHER" ? "#ffffff" : "#1e293b" });
+      other.setBackgroundColor(country === "OTHER" ? "#4f46e5" : "#e2e8f0");
+      requirement.setText(country === "IN"
+        ? "India: you must be 18 or older."
+        : "Outside India: you must be at least 13 and meet any higher local minimum age.");
+      confirm.setText(country === "IN" ? "I AM 18 OR OLDER" : "I MEET THE MINIMUM AGE");
+    };
+    india.on("pointerdown", () => selectCountry("IN"));
+    other.on("pointerdown", () => selectCountry("OTHER"));
+
+    this.add.text(280, 470, "This is a self-declaration, not identity or age verification. Do not continue if you do not meet the applicable minimum age.", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "13px", color: "#64748b",
+      align: "center", wordWrap: { width: 430 }
+    }).setOrigin(0.5);
+
+    const confirm = this.add.text(280, 560, "I AM 18 OR OLDER", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "18px", color: "#ffffff",
+      backgroundColor: "#15803d", padding: { x: 24, y: 15 }
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+
+    const privacy = this.add.text(280, 650, "PRIVACY POLICY  ·  TERMS", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "14px", color: "#4f46e5"
+    }).setOrigin(0.5);
+    privacy.setInteractive({ useHandCursor: true });
+    privacy.on("pointerdown", () => window.open("/privacy.html", "_blank", "noopener"));
+    confirm.on("pointerdown", async () => {
+      confirm.disableInteractive();
+      confirm.setText("SAVING...");
+      try {
+        const result = await confirmAgeEligibility(this.ageGateCountry, true);
+        if (!result.confirmed || result.eligible !== true) throw new Error("Age confirmation was not accepted.");
+        this.ageGateAllowed = true;
+        this.ageGateReady = true;
+        this.renderPath("/");
+        void this.refreshServerProfile();
+      } catch (error) {
+        console.warn("Could not save age confirmation:", error);
+        confirm.setText("RETRY CONFIRMATION");
+        confirm.setInteractive({ useHandCursor: true });
+      }
+    });
   }
 
   private syncPath(path: string, replace = false) {
@@ -115,6 +243,7 @@ class GameScene extends Phaser.Scene {
   }
 
   private renderPath(pathname: string) {
+    if (!this.ageGateAllowed) return;
     const route = resolveAppRoute(pathname);
 
     switch (route.type) {
