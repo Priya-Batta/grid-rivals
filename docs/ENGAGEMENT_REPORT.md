@@ -10,8 +10,8 @@ Run these read-only queries in the Supabase SQL Editor for the production projec
 - **Completed games:** runs with `consumed_at IS NOT NULL`. A run is consumed when its verified result is finalized.
 - **Completion rate:** completed runs divided by started runs in the same start-date cohort. This is a cohort-based rate; very recent runs may not yet have finished.
 - **Active players:** distinct anonymous Supabase user IDs with at least one game start that day.
-- **D1 retention:** a new player's first-ever game-start date plus one UTC calendar day contains another game start. D1 is reported only after the cohort has had a full following UTC calendar day.
-- **D7 retention:** a new player's first-ever game-start date plus seven UTC calendar days contains another game start. D7 is reported only after the cohort has had seven full following UTC calendar days.
+- **D1 retention:** a new player's first-ever game-start date plus one UTC calendar day contains another game start. D1 is reported only after the following UTC calendar day has fully ended.
+- **D7 retention:** a new player's first-ever game-start date plus seven UTC calendar days contains another game start. D7 is reported only after the seventh following UTC calendar day has fully ended.
 
 Retention is exact-day calendar retention, not “any time within the following 24 hours” or “any time during days 1–7”. Immature cohorts show `NULL` for the relevant retention fields rather than a misleading zero.
 
@@ -82,21 +82,21 @@ select
   cohort_date,
   count(*) as new_players,
   case
-    when cohort_date <= (now() at time zone 'UTC')::date - 1
+    when cohort_date <= (now() at time zone 'UTC')::date - 2
     then count(*) filter (where returned_d1)
   end as players_returned_d1,
   case
-    when cohort_date <= (now() at time zone 'UTC')::date - 1
+    when cohort_date <= (now() at time zone 'UTC')::date - 2
     then round(
       100.0 * count(*) filter (where returned_d1) / nullif(count(*), 0), 1
     )
   end as d1_retention_pct,
   case
-    when cohort_date <= (now() at time zone 'UTC')::date - 7
+    when cohort_date <= (now() at time zone 'UTC')::date - 8
     then count(*) filter (where returned_d7)
   end as players_returned_d7,
   case
-    when cohort_date <= (now() at time zone 'UTC')::date - 7
+    when cohort_date <= (now() at time zone 'UTC')::date - 8
     then round(
       100.0 * count(*) filter (where returned_d7) / nullif(count(*), 0), 1
     )
