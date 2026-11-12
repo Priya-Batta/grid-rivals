@@ -502,6 +502,24 @@ class GameScene extends Phaser.Scene {
 
     if (shouldShowHowToPlay()) this.showHowToPlay();
 
+    // Public policy and support pages
+    const policyLinks = [
+      { label: "PRIVACY POLICY", url: "/privacy.html", x: 105 },
+      { label: "TERMS", url: "/terms.html", x: 280 },
+      { label: "SUPPORT", url: "/support.html", x: 455 }
+    ];
+    policyLinks.forEach(({ label, url, x }) => {
+      const link = this.add.text(x, 891, label, {
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "11px",
+        color: "#475569",
+        fontStyle: "bold"
+      }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+      link.on("pointerover", () => link.setColor("#0284c7"));
+      link.on("pointerout", () => link.setColor("#475569"));
+      link.on("pointerdown", () => window.open(url, "_blank", "noopener,noreferrer"));
+    });
+
     // Footer
     this.add.text(280, 910, "CAPTURE  •  EXPAND  •  CONQUER", {
       fontSize: "14px",
