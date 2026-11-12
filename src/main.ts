@@ -190,7 +190,6 @@ class GameScene extends Phaser.Scene {
     );
   }
 
-
   private showHowToPlay() {
     const overlay = this.add.container(0, 0).setDepth(1000);
     const add = (object: Phaser.GameObjects.GameObject) => overlay.add(object);
@@ -480,7 +479,7 @@ class GameScene extends Phaser.Scene {
     // Keep the rules available to returning players.
     const howToPlayButton = this.add.text(
       280,
-      884,
+      870,
       "HOW TO PLAY",
       {
         fontFamily: "Arial, Helvetica, sans-serif",
@@ -503,9 +502,8 @@ class GameScene extends Phaser.Scene {
 
     if (shouldShowHowToPlay()) this.showHowToPlay();
 
-
     // Footer
-    this.add.text(280, 894, "CAPTURE  •  EXPAND  •  CONQUER", {
+    this.add.text(280, 910, "CAPTURE  •  EXPAND  •  CONQUER", {
       fontSize: "14px",
       color: "#64748b",
       letterSpacing: 2
