@@ -4,6 +4,7 @@ import type { LeaderboardView } from "./leaderboard-ui.ts";
 import { resolveAppRoute } from "./app/routes.ts";
 import { createBoardView, refreshBoardView, type BoardTile } from "./game/board-view.ts";
 import "./style.css";
+import { markHowToPlaySeen, shouldShowHowToPlay } from "./services/onboarding.ts";
 import { recordDailyCompletion } from "./services/daily-progress.ts";
 import {
   readBestScore,
@@ -187,6 +188,93 @@ class GameScene extends Phaser.Scene {
       () => this.showMenu(),
       () => this.showStatistics()
     );
+  }
+
+  private showHowToPlay() {
+    const overlay = this.add.container(0, 0).setDepth(1000);
+    const add = (object: Phaser.GameObjects.GameObject) => overlay.add(object);
+
+    add(this.add.rectangle(280, 460, 560, 920, 0x0b1220, 0.78));
+    add(this.add.rectangle(280, 460, 510, 690, 0xf8fafc)
+      .setStrokeStyle(3, 0x0ea5e9));
+
+    add(this.add.text(280, 178, "HOW TO PLAY", {
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "30px",
+      color: "#1e293b",
+      fontStyle: "bold"
+    }).setOrigin(0.5));
+
+    add(this.add.text(280, 220, "CLAIM TILES. SCORE 200 OR MORE. CONQUER THE GRID.", {
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "13px",
+      color: "#0284c7",
+      fontStyle: "bold",
+      align: "center"
+    }).setOrigin(0.5));
+
+    const instructions = [
+      ["1  START IN THE CENTRE", "Your first tile is the ★ in the middle of the board."],
+      ["2  CLAIM A NEIGHBOURING TILE", "Choose an unclaimed tile directly above, below, left or right of a tile you own. Diagonal tiles do not count."],
+      ["3  EARN POINTS", "Each tile is worth its number × 10. A tile marked 3 earns 30 points."],
+      ["4  SCORE 200 OR MORE TO WIN", "Use all your available moves and finish with at least 200 points."]
+    ];
+
+    const positions = [282, 374, 486, 578];
+    instructions.forEach(([heading, detail], index) => {
+      add(this.add.text(58, positions[index], heading, {
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "16px",
+        color: "#1e293b",
+        fontStyle: "bold",
+        wordWrap: { width: 444 }
+      }).setOrigin(0, 0.5));
+
+      add(this.add.text(58, positions[index] + 28, detail, {
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "14px",
+        color: "#475569",
+        lineSpacing: 4,
+        wordWrap: { width: 444 }
+      }).setOrigin(0, 0));
+    });
+
+    add(this.add.text(280, 680,
+      "EASY: 18 MOVES  •  MEDIUM: 12  •  HARD: 8\nDAILY CHALLENGE USES MEDIUM RULES",
+      {
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "13px",
+        color: "#0369a1",
+        fontStyle: "bold",
+        align: "center",
+        lineSpacing: 5
+      }
+    ).setOrigin(0.5));
+
+    const gotIt = this.add.rectangle(280, 754, 300, 48, 0x4f46e5)
+      .setStrokeStyle(2, 0x3730a3)
+      .setInteractive({ useHandCursor: true });
+    add(gotIt);
+
+    const gotItLabel = this.add.text(280, 754, "GOT IT — CHOOSE A GAME", {
+      fontFamily: "Arial, Helvetica, sans-serif",
+      fontSize: "16px",
+      color: "#ffffff",
+      fontStyle: "bold"
+    }).setOrigin(0.5);
+    add(gotItLabel);
+
+    gotIt.on("pointerover", () => gotIt.setFillStyle(0x4338ca));
+    gotIt.on("pointerout", () => gotIt.setFillStyle(0x4f46e5));
+    gotIt.on("pointerdown", () => {
+      markHowToPlaySeen();
+      overlay.destroy(true);
+    });
+    gotItLabel.setInteractive({ useHandCursor: true });
+    gotItLabel.on("pointerdown", () => {
+      markHowToPlaySeen();
+      overlay.destroy(true);
+    });
   }
 
   private showMenu() {
@@ -388,8 +476,34 @@ class GameScene extends Phaser.Scene {
       );
     });
 
+    // Keep the rules available to returning players.
+    const howToPlayButton = this.add.text(
+      280,
+      870,
+      "HOW TO PLAY",
+      {
+        fontFamily: "Arial, Helvetica, sans-serif",
+        fontSize: "15px",
+        color: "#1e293b",
+        backgroundColor: "#e0f2fe",
+        padding: { x: 18, y: 8 }
+      }
+    )
+      .setOrigin(0.5)
+      .setInteractive({ useHandCursor: true });
+
+    howToPlayButton.on("pointerover", () => {
+      howToPlayButton.setBackgroundColor("#bae6fd");
+    });
+    howToPlayButton.on("pointerout", () => {
+      howToPlayButton.setBackgroundColor("#e0f2fe");
+    });
+    howToPlayButton.on("pointerdown", () => this.showHowToPlay());
+
+    if (shouldShowHowToPlay()) this.showHowToPlay();
+
     // Footer
-    this.add.text(280, 894, "CAPTURE  •  EXPAND  •  CONQUER", {
+    this.add.text(280, 910, "CAPTURE  •  EXPAND  •  CONQUER", {
       fontSize: "14px",
       color: "#64748b",
       letterSpacing: 2
@@ -1061,7 +1175,10 @@ new Phaser.Game({
   height: 920,
   parent: "app",
   backgroundColor: "#f5f7ff",
-  render: { antialias: true, roundPixels: true },
+  render: {
+    antialias: true,
+    roundPixels: true
+  },
   scene: [GameScene],
   scale: {
     mode: Phaser.Scale.FIT,
