@@ -13,11 +13,6 @@ const DEFAULT_ALLOWED_ORIGINS = [
   "http://localhost:5173"
 ];
 
-type ConfiguredClients = {
-  authClient: ReturnType<typeof createClient>;
-  serviceClient: ReturnType<typeof createClient>;
-};
-
 type FinalizationRow = {
   accepted: boolean;
   duplicate: boolean;
@@ -64,7 +59,7 @@ function jsonResponse(request: Request, status: number, payload: Record<string, 
   return new Response(JSON.stringify(payload), { status, headers });
 }
 
-function getConfiguredClients(accessToken: string): ConfiguredClients {
+function getConfiguredClients(accessToken: string) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -81,11 +76,11 @@ function getConfiguredClients(accessToken: string): ConfiguredClients {
   } as const;
 
   return {
-    authClient: createClient(supabaseUrl, anonKey, {
+    authClient: createClient<any>(supabaseUrl, anonKey, {
       ...clientOptions,
       global: { headers: { Authorization: `Bearer ${accessToken}` } }
     }),
-    serviceClient: createClient(supabaseUrl, serviceRoleKey, clientOptions)
+    serviceClient: createClient<any>(supabaseUrl, serviceRoleKey, clientOptions)
   };
 }
 
