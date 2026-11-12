@@ -53,7 +53,9 @@ Deno.serve(async (request: Request) => {
     const input = body as Record<string, unknown>;
 
     if (input.action === "status" && Object.keys(input).length === 1) {
-      const record = data.user.app_metadata?.grid_rivals_age_gate;
+      const { data: storedUser, error: storedUserError } = await adminClient.auth.admin.getUserById(data.user.id);
+      if (storedUserError || !storedUser.user) return respond(request, 503, { error: "Could not load age confirmation." });
+      const record = storedUser.user.app_metadata?.grid_rivals_age_gate;
       if (!record || record.policyVersion !== POLICY_VERSION || typeof record.eligible !== "boolean") {
         return respond(request, 200, { confirmed: false });
       }
