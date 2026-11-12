@@ -499,7 +499,8 @@ html, body {
     linear-gradient(135deg, #f8faff 0%, #eef4ff 52%, #f7fbff 100%);
 }
 canvas {
-  filter: drop-shadow(0 18px 38px rgba(64, 83, 150, .14));
+  /* Avoid a soft composited edge around the game text and tiles. */
+  filter: none;
 }
 .leaderboard-overlay {
   color: var(--ink);
