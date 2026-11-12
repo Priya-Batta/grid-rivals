@@ -59,7 +59,12 @@ Deno.serve(async (request: Request) => {
       const { data: storedUser, error: storedUserError } = await adminClient.auth.admin.getUserById(data.user.id);
       if (storedUserError || !storedUser.user) return respond(request, 503, { error: "Could not load age confirmation." });
       const record = storedUser.user.app_metadata?.grid_rivals_age_gate;
-      if (!record || record.policyVersion !== POLICY_VERSION || typeof record.eligible !== "boolean") {
+      if (
+        !record ||
+        record.policyVersion !== POLICY_VERSION ||
+        typeof record.eligible !== "boolean" ||
+        (record.country !== "IN" && record.country !== "OTHER")
+      ) {
         return respond(request, 200, { confirmed: false });
       }
       return respond(request, 200, {
@@ -81,6 +86,17 @@ Deno.serve(async (request: Request) => {
     if (latestUserError || !latestUser.user) return respond(request, 503, { error: "Could not save age confirmation." });
     const existingRecord = latestUser.user.app_metadata?.grid_rivals_age_gate;
     if (existingRecord?.policyVersion === POLICY_VERSION) {
+      if (
+        existingRecord.country === input.country &&
+        existingRecord.eligible === input.eligible
+      ) {
+        return respond(request, 200, {
+          confirmed: true,
+          eligible: existingRecord.eligible,
+          country: existingRecord.country,
+          policyVersion: POLICY_VERSION
+        });
+      }
       return respond(request, 409, { error: "Age confirmation has already been recorded for this policy." });
     }
 
