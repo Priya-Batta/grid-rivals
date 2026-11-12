@@ -1,9 +1,12 @@
 import { createClient } from "npm:@supabase/supabase-js@2";
 
-const ALLOWED_ORIGINS = new Set([
-  "https://grid-rivals.pages.dev",
-  "http://localhost:5173"
-]);
+function allowedOrigins(): Set<string> {
+  const configured = Deno.env.get("ALLOWED_ORIGINS");
+  const values = configured
+    ? configured.split(",").map((origin) => origin.trim()).filter(Boolean)
+    : ["https://grid-rivals.pages.dev", "http://localhost:5173"];
+  return new Set(values);
+}
 const POLICY_VERSION = 1;
 
 function cors(request: Request): Headers {
@@ -14,7 +17,7 @@ function cors(request: Request): Headers {
     "Vary": "Origin"
   });
   const origin = request.headers.get("origin");
-  if (origin && ALLOWED_ORIGINS.has(origin)) headers.set("Access-Control-Allow-Origin", origin);
+  if (origin && allowedOrigins().has(origin)) headers.set("Access-Control-Allow-Origin", origin);
   return headers;
 }
 
@@ -27,7 +30,7 @@ function respond(request: Request, status: number, body: Record<string, unknown>
 
 Deno.serve(async (request: Request) => {
   const origin = request.headers.get("origin");
-  if (origin && !ALLOWED_ORIGINS.has(origin)) return respond(request, 403, { error: "Origin not allowed." });
+  if (origin && !allowedOrigins().has(origin)) return respond(request, 403, { error: "Origin not allowed." });
   if (request.method === "OPTIONS") return new Response(null, { status: 204, headers: cors(request) });
   if (request.method !== "POST") return respond(request, 405, { error: "Use POST." });
 
@@ -85,8 +88,10 @@ Deno.serve(async (request: Request) => {
       policyVersion: POLICY_VERSION,
       confirmedAt: new Date().toISOString()
     };
+    const { data: latestUser, error: latestUserError } = await adminClient.auth.admin.getUserById(data.user.id);
+    if (latestUserError || !latestUser.user) return respond(request, 503, { error: "Could not save age confirmation." });
     const { error: updateError } = await adminClient.auth.admin.updateUserById(data.user.id, {
-      app_metadata: { ...data.user.app_metadata, grid_rivals_age_gate: record }
+      app_metadata: { ...latestUser.user.app_metadata, grid_rivals_age_gate: record }
     });
     if (updateError) {
       console.error("Could not save Grid Rivals age confirmation:", updateError.message);
