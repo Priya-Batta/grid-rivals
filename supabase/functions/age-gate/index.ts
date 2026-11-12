@@ -77,7 +77,9 @@ Deno.serve(async (request: Request) => {
       typeof input.eligible !== "boolean"
     ) return respond(request, 400, { error: "Choose a country and confirm the applicable minimum age." });
 
-    const existingRecord = data.user.app_metadata?.grid_rivals_age_gate;
+    const { data: latestUser, error: latestUserError } = await adminClient.auth.admin.getUserById(data.user.id);
+    if (latestUserError || !latestUser.user) return respond(request, 503, { error: "Could not save age confirmation." });
+    const existingRecord = latestUser.user.app_metadata?.grid_rivals_age_gate;
     if (existingRecord?.policyVersion === POLICY_VERSION) {
       return respond(request, 409, { error: "Age confirmation has already been recorded for this policy." });
     }
@@ -88,8 +90,6 @@ Deno.serve(async (request: Request) => {
       policyVersion: POLICY_VERSION,
       confirmedAt: new Date().toISOString()
     };
-    const { data: latestUser, error: latestUserError } = await adminClient.auth.admin.getUserById(data.user.id);
-    if (latestUserError || !latestUser.user) return respond(request, 503, { error: "Could not save age confirmation." });
     const { error: updateError } = await adminClient.auth.admin.updateUserById(data.user.id, {
       app_metadata: { ...latestUser.user.app_metadata, grid_rivals_age_gate: record }
     });
