@@ -1177,9 +1177,7 @@ new Phaser.Game({
   backgroundColor: "#f5f7ff",
   render: {
     antialias: true,
-    roundPixels: true,
-    // Render the fixed logical canvas at a higher pixel density on Retina/high-DPI displays.
-    resolution: Math.min(window.devicePixelRatio || 1, 2)
+    roundPixels: true
   },
   scene: [GameScene],
   scale: {
