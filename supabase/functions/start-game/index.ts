@@ -17,11 +17,6 @@ type StartGameRequest = {
   difficulty: Difficulty;
 };
 
-type ConfiguredClients = {
-  authClient: ReturnType<typeof createClient>;
-  serviceClient: ReturnType<typeof createClient>;
-};
-
 class HttpError extends Error {
   readonly status: number;
 
@@ -60,7 +55,7 @@ function jsonResponse(request: Request, status: number, payload: Record<string, 
   return new Response(JSON.stringify(payload), { status, headers });
 }
 
-function getConfiguredClients(accessToken: string): ConfiguredClients {
+function getConfiguredClients(accessToken: string) {
   const supabaseUrl = Deno.env.get("SUPABASE_URL");
   const anonKey = Deno.env.get("SUPABASE_ANON_KEY");
   const serviceRoleKey = Deno.env.get("SUPABASE_SERVICE_ROLE_KEY");
@@ -77,11 +72,11 @@ function getConfiguredClients(accessToken: string): ConfiguredClients {
     }
   } as const;
 
-  const authClient = createClient(supabaseUrl, anonKey, {
+  const authClient = createClient<any>(supabaseUrl, anonKey, {
     ...clientOptions,
     global: { headers: { Authorization: `Bearer ${accessToken}` } }
   });
-  const serviceClient = createClient(supabaseUrl, serviceRoleKey, clientOptions);
+  const serviceClient = createClient<any>(supabaseUrl, serviceRoleKey, clientOptions);
   return { authClient, serviceClient };
 }
 
