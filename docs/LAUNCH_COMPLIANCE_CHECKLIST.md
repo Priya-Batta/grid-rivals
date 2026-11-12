@@ -15,7 +15,6 @@ This branch contains initial draft static pages. It is not ready to merge or dep
 - [x] Add a draft age self-declaration gate: returning and new anonymous accounts must select India or outside India and confirm the applicable age threshold before app access.
 - [x] Store the selected region, eligibility response, policy version and timestamp in Supabase Auth app metadata; no date of birth or identity document is collected by this flow.
 - [x] Require the recorded eligible status in both verified-game Edge Functions, so direct game-start and score-submission calls are rejected without it.
-- [ ] Deploy the new `age-gate` Supabase Edge Function and the updated `start-game` / `submit-game` functions only after review; verify JWT settings and production secrets.
 - [ ] Run build and tests, then manually test new and returning accounts, India and other-region selections, underage/no-confirmation blocking, refresh, direct routes and direct API calls. Confirm existing player progress remains intact.
 - [ ] Confirm whether a self-declaration is sufficient for the applicable legal requirements; do not assume it is. The implementation is not verified age assurance.
 - [ ] Confirm the non-India age policy against local age and parental-consent rules before making the service available in those jurisdictions.
@@ -36,4 +35,8 @@ This branch contains initial draft static pages. It is not ready to merge or dep
 - Game runs are created and finalized through service-role Edge Function paths after validating the user's Supabase access token.
 - These are positive code-level findings, not a complete production security audit. Live configuration, function deployment settings, logs, secrets and provider-side controls still require verification.
 
-The age-gate implementation uses Supabase Auth app metadata and does not add a database migration. The new Edge Function and updated gameplay functions have not been deployed. No production deployment or merge is authorised by this branch.
+The mandatory age self-declaration screen and server-side age-metadata checks have been removed from normal game access. The game does not request a date of birth, identity document or parental-consent record to start playing.
+
+- [ ] Assess whether risk-appropriate age-gating, age verification, parental controls or other safeguards are required for the final game classification and target markets. Do not assume a Terms clause alone satisfies a requirement that applies.
+- [ ] Confirm applicable age and parental-consent requirements before intentionally targeting children or collecting their personal data.
+- [ ] Run tests and a production build; manually test new and returning accounts, direct routes, game start and score submission. Confirm existing player progress remains intact. No production deployment or merge is authorised by this branch.
