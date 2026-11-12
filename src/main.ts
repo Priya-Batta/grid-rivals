@@ -183,6 +183,7 @@ class GameScene extends Phaser.Scene {
       align: "center", wordWrap: { width: 430 }
     }).setOrigin(0.5);
 
+    let confirm: Phaser.GameObjects.Text;
     const selectCountry = (country: "IN" | "OTHER") => {
       this.ageGateCountry = country;
       india.setStyle({ color: country === "IN" ? "#ffffff" : "#1e293b" });
@@ -203,7 +204,7 @@ class GameScene extends Phaser.Scene {
       align: "center", wordWrap: { width: 430 }
     }).setOrigin(0.5);
 
-    const confirm = this.add.text(280, 560, "SELECT COUNTRY FIRST", {
+    confirm = this.add.text(280, 560, "SELECT COUNTRY FIRST", {
       fontFamily: "Arial, Helvetica, sans-serif", fontSize: "18px", color: "#ffffff",
       backgroundColor: "#15803d", padding: { x: 24, y: 15 }
     }).setOrigin(0.5);
@@ -212,10 +213,11 @@ class GameScene extends Phaser.Scene {
       fontFamily: "Arial, Helvetica, sans-serif", fontSize: "13px", color: "#b91c1c"
     }).setOrigin(0.5).setInteractive({ useHandCursor: true });
     decline.on("pointerdown", async () => {
-      if (!this.ageGateCountry) return;
+      const country = this.ageGateCountry;
+      if (!country) return;
       decline.disableInteractive();
       try {
-        await confirmAgeEligibility(this.ageGateCountry, false);
+        await confirmAgeEligibility(country, false);
         this.showAgeGate(true);
       } catch (error) {
         console.warn("Could not save age ineligibility:", error);
@@ -236,8 +238,9 @@ class GameScene extends Phaser.Scene {
       confirm.disableInteractive();
       confirm.setText("SAVING...");
       try {
-        if (!this.ageGateCountry) return;
-        const result = await confirmAgeEligibility(this.ageGateCountry, true);
+        const country = this.ageGateCountry;
+        if (!country) return;
+        const result = await confirmAgeEligibility(country, true);
         if (!result.confirmed || result.eligible !== true) throw new Error("Age confirmation was not accepted.");
         this.ageGateAllowed = true;
         this.renderPath("/");
