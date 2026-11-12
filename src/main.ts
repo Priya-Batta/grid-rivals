@@ -213,6 +213,10 @@ class GameScene extends Phaser.Scene {
     }).setOrigin(0.5);
     privacy.setInteractive({ useHandCursor: true });
     privacy.on("pointerdown", () => window.open("/privacy.html", "_blank", "noopener"));
+    const terms = this.add.text(280, 680, "TERMS OF SERVICE", {
+      fontFamily: "Arial, Helvetica, sans-serif", fontSize: "14px", color: "#4f46e5"
+    }).setOrigin(0.5).setInteractive({ useHandCursor: true });
+    terms.on("pointerdown", () => window.open("/terms.html", "_blank", "noopener"));
     confirm.on("pointerdown", async () => {
       confirm.disableInteractive();
       confirm.setText("SAVING...");
